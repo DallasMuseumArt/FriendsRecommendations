@@ -1,0 +1,20 @@
+{
+    "name": "dma/recomendations",
+    "description": "A simple recomendation engine for DMA Friends platform",
+    "homepage": "http://www.dma.org",
+    "keywords": ["october", "cms", "friends", "fractal"],
+    "authors": [
+        {
+            "name": "Kristen Arnold",
+            "email": "karnold@dma.org"
+        },
+        {
+            "name": "Carlos Arroyo",
+            "email": "Carlos.Arroyo@dma.org"
+        }
+    ],
+
+    "require": {
+        "elasticsearch/elasticsearch": "~1.0"
+    }
+}

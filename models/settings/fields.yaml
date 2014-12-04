@@ -1,0 +1,12 @@
+# ===================================
+#  Field Definitions
+# ===================================
+
+# fields:
+#     status:
+#         label: Blog Post Status
+#         type: checkboxlist
+#         options:
+#             draft: Draft
+#             published: Published
+#             archived: Archived
