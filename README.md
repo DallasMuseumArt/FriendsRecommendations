@@ -1,9 +1,7 @@
-OctoberFriends Recomendations
-=============================
+OctoberFriends Recommendations
+==============================
 
-Friends is an open source plugin based on OctoberCMS that encourages and recognizes visitor participation 
-as an essential ingredient of the museum experience. 
-Currently, participants must enroll at kiosks in the Museum, but plans are underway to add an online sign-up option.
+A pluging for Friends platform for give Activities and Badges recommendations using ElasticSearch as engine.
 
 # Requirements
 * PHP >= 5.4
@@ -13,7 +11,7 @@ Currently, participants must enroll at kiosks in the Museum, but plans are under
 
 * Download and complete the installation for October CMS (http://octobercms.com)
 * install DMA.friends pluging
-* Extract this repository into plugins/dma/recomendations
-* In plugins/dma/recomendations folder run composer install.
-* Enable the "Recomendations" Plugin
+* Extract this repository into plugins/dma/recommendations
+* In plugins/dma/recommendations folder run composer install.
+* Enable the "Friends Recommendations" Plugin
 

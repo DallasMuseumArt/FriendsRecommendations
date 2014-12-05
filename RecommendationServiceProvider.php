@@ -1,10 +1,10 @@
-<?php namespace DMA\Recomendations;
+<?php namespace DMA\Recommendations;
 
 use Log;
 use Illuminate\Support\ServiceProvider;
-use DMA\Recomendations\Classes\RecomendationManager;
+use DMA\Recommendations\Classes\RecommendationManager;
 
-class RecomendationServiceProvider extends ServiceProvider
+class RecommendationServiceProvider extends ServiceProvider
 {
     /**
      * Indicates if loading of the provider is deferred.
@@ -20,38 +20,37 @@ class RecomendationServiceProvider extends ServiceProvider
     public function register()
     {
         // Register RecomendationManager
-        $this->app['recomendations'] = $this->app->share(function($app)
-        //$this->app->bind('recomendations', function()
+        $this->app['recommendations'] = $this->app->share(function($app)
         {
-            $recomendationManager = new RecomendationManager;
-            $recomendationManager->registerItems([
-                '\DMA\Recomendations\Classes\Items\ActivityItem' => [
+            $recommendationManager = new RecommendationManager;
+            $recommendationManager->registerItems([
+                '\DMA\Recommendations\Classes\Items\ActivityItem' => [
                     'name' => 'Activities',
-                    'description' => 'Recomend activities base on tags and user activity.'
+                    'description' => 'Recommend activities base on tags and user activity.'
                 ],
-                '\DMA\Recomendations\Classes\Items\BadgeItem' => [
+                '\DMA\Recommendations\Classes\Items\BadgeItem' => [
                     'name' => 'Badges',
-                    'description' => 'Recomend badges base on tags and user activity.'
+                    'description' => 'Recommend badges base on tags and user activity.'
                 ],
-                '\DMA\Recomendations\Classes\Items\UserItem' => [
+                '\DMA\Recommendations\Classes\Items\UserItem' => [
                     'name' => 'Users',
                     'description' => ''
                 ],                    
 
             ]);
 
-            $recomendationManager->registerBackends([
-        		'\DMA\Recomendations\Classes\Backends\ElasticSearchBackend' => [
+            $recommendationManager->registerBackends([
+        		'\DMA\Recommendations\Classes\Backends\ElasticSearchBackend' => [
             		'name' => 'ElasticSearch engine',
-            		'description' => 'Provide recomendations using ElasticSearch as backend.'
+            		'description' => 'Provide recommendations using ElasticSearch as backend.'
         		],
         	]);
             
-            return $recomendationManager;
+            return $recommendationManager;
         });
 
         // Create alias Facade to the Notification manager
-        $this->createAlias('Recomendation', 'DMA\Recomendations\Facades\Recomendation');
+        $this->createAlias('Recommendation', 'DMA\Recommendations\Facades\Recommendation');
 
     }
 
@@ -61,7 +60,7 @@ class RecomendationServiceProvider extends ServiceProvider
      */
     public function provides()
     {
-        return ['recomendations'];
+        return ['recommendations'];
 
     }
 

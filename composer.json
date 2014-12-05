@@ -1,8 +1,8 @@
 {
-    "name": "dma/recomendations",
-    "description": "A simple recomendation engine for DMA Friends platform",
+    "name": "DMA/Recommendations",
+    "description": "A recommendation engine for DMA Friends platform",
     "homepage": "http://www.dma.org",
-    "keywords": ["october", "cms", "friends", "fractal"],
+    "keywords": ["october", "cms", "friends", "elasticsearch"],
     "authors": [
         {
             "name": "Kristen Arnold",

@@ -1,22 +1,22 @@
-<?php namespace DMA\Recomendations\Classes;
+<?php namespace DMA\Recommendations\Classes;
 
-use Dma\Recomendations\Models\Settings;
+use DMA\Recommendations\Models\Settings;
 
 /**
  * DMA recomendation manager 
  * @author Carlos Arroyo
  */
-class RecomendationManager
+class RecommendationManager
 {
     
     /**
-     * Dictionary of recomendation items
+     * Dictionary of Recommendation Items
      * @var array
      */
     private $items = [];
 
     /**
-     * Dictionary of recomendation backends
+     * Dictionary of Recommendation Backends
      * @var array
      */
     private $backends = [];
@@ -30,13 +30,13 @@ class RecomendationManager
     
     /**
      * Active recomendation backend engine
-     * @var DMA\Recomendations\Classes\backends\BackendBase
+     * @var DMA\Recommendations\Classes\Backends\BackendBase
      */
     private $engine = null;
     
     /**
      * Register recomentation items
-     * @param array $items classnames of recomendation items to be register
+     * @param array $items classnames of Recommendation Items to be register
      */
     public function registerItems(array $items)
     {
@@ -57,7 +57,7 @@ class RecomendationManager
 
     
     /**
-     * Return an array of all register recomendation items
+     * Return an array of all register Recommendation Items
      * @return array
      */
     public function getRegisterItems()
@@ -99,7 +99,7 @@ class RecomendationManager
     
     
     /**
-     * Return an array of all register recomendation backends
+     * Return an array of all register Recommendation Backends
      * @return array
      */
     public function getRegisterBackends()

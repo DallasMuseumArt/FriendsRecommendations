@@ -1,8 +1,8 @@
-<?php namespace DMA\Recomendations\Classes\Items;
+<?php namespace DMA\Recommendations\Classes\Items;
 
 use Log;
 use Doctrine\DBAL\Query\QueryBuilder;
-use Dma\Recomendations\Models\Settings;
+use DMA\Recommendations\Models\Settings;
 use Doctrine\DBAL\Types\ArrayType;
 
 abstract class ItemBase
@@ -27,23 +27,23 @@ abstract class ItemBase
     private $features = null;
     
     /**
-     * Common recomedation item settings
+     * Common Recommedation Item settings
      * @var array
      */
     protected $common_settings = [
         'max_recomendations' => [
-            'label' => 'Maximum limit of recomendations',
+            'label' => 'Maximum limit of recommendations',
             'span'  => 'auto',
             'type'  => 'number', 
             'default' => 5,
-            'commentAbove' => 'This value only affects this Recomendation item.',
+            'commentAbove' => 'This value only affects this recommendations item.',
         ],
         'active' => [
             'label' => 'Is active',
             'span'  => 'auto',
             'type'  => 'checkbox',
             'default' => true ,
-            'comment' => 'When disable engine will not get recomendations of this Item.',
+            'comment' => 'When disable engine will not get recommendations of this Item.',
         ],
                 
         'features' => [
@@ -51,7 +51,7 @@ abstract class ItemBase
             'span'  => 'left',
             'type'  => 'checkboxlist',
             'options' => [],
-            'commentAbove' => 'Make recomendations using the following features:',
+            'commentAbove' => 'Make recommendations using the following features:',
         ], 
 
         'filters' => [
@@ -59,7 +59,7 @@ abstract class ItemBase
             'span'  => 'right',
             'type'  => 'checkboxlist',
             'options' => [],
-            'commentAbove' => 'Filter recomendations by one or many of the following filters:',
+            'commentAbove' => 'Filter recommendations by one or many of the following filters:',
         ],  
 
         'weight_by' => [
@@ -67,7 +67,7 @@ abstract class ItemBase
             'span'  => 'left',
             'type'  => 'dropdown',
             'options' => [],
-            'commentAbove' => 'Boost recomendation items by:',
+            'commentAbove' => 'Boost recommendations items by:',
         ],
         
         'tools' => [
@@ -80,7 +80,7 @@ abstract class ItemBase
 
     /**
      * Return classname of the model that will feed 
-     * this recomendation item
+     * this recommendation item
      *
      * @return string
      */
@@ -173,7 +173,7 @@ abstract class ItemBase
     
     
     /**
-     * Configure specific settings fields for this recomendation item.
+     * Configure specific settings fields for this recommendation item.
      * For futher information go to http://octobercms.com/docs/plugin/settings#database-settings
      *
      * @return array
@@ -182,8 +182,8 @@ abstract class ItemBase
     
     
     /**
-     * Get recomendation item settings fields including commong field settings 
-     * All settings are prefixed with the key identifier of the recomendation item.
+     * Get recommendation item settings fields including commong field settings 
+     * All settings are prefixed with the key identifier of the recommendation item.
      * 
      * @return array
      */
@@ -247,7 +247,7 @@ abstract class ItemBase
     } 
     
     /**
-     * Return all declared fields and properties in this Recomendation Item
+     * Return all declared fields and properties in this Recommendation Item
      * @return array
      */
     public function getItemDataFields(){
@@ -267,7 +267,7 @@ abstract class ItemBase
 
     /**
      * Return an array of fields of the model that will be used
-     * as features of the recomendation item. 
+     * as features of the Recommendation Item. 
      * 
      * @return array
      */
@@ -284,7 +284,7 @@ abstract class ItemBase
     
 
     /**
-     * Return an array of filters avaliable by the recomendation item.
+     * Return an array of filters avaliable by the Recommendation Item.
      * 
      * @return array
      */
@@ -329,11 +329,11 @@ abstract class ItemBase
 
     /**
      * Return an array of events namespaces that will be bind
-     * to keep updated this Recomendation Item in each engine backend.
+     * to keep updated this Recommendation Item in each engine backend.
      * 
      * An event can define a custom Clouser with custom logic. If a Clouser
      * is not given the engine will generate a generic Clouser that look for register
-     * October databse models and use the Item recomendation of it if register. 
+     * October databse models and use the Recommendation Item of it if register. 
      * 
      * 
      * Eg. 

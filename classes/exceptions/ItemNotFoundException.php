@@ -1,4 +1,4 @@
-<?php namespace DMA\Recomendations\Classes\Exceptions;
+<?php namespace DMA\Recommendations\Classes\Exceptions;
 
 use Exception;
 

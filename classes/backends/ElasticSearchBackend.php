@@ -1,4 +1,4 @@
-<?php namespace DMA\Recomendations\Classes\Backends;
+<?php namespace DMA\Recommendations\Classes\Backends;
 
 use Log;
 use Event;
@@ -6,9 +6,9 @@ use Event;
 use Elasticsearch;
 use Elasticsearch\Common\Exceptions\BadRequest400Exception;
 
-use Dma\Recomendations\Models\Settings;
-use DMA\Recomendations\Classes\Backends\BackendBase;
-use DMA\Recomendations\Classes\RecomendationManager;
+use DMA\Recommendations\Models\Settings;
+use DMA\Recommendations\Classes\Backends\BackendBase;
+use DMA\Recommendations\Classes\RecomendationManager;
 
 use Illuminate\Support\Collection;
 
@@ -28,7 +28,7 @@ class ElasticSearchBackend extends BackendBase
     
     /**
      * {@inheritDoc}
-     * @see \DMA\Recomendations\Classes\Backends\BackendBase::getKey()
+     * @see \DMA\Recommendations\Classes\Backends\BackendBase::getKey()
      */
     public function getKey(){
         return 'elascticsearch';
@@ -36,7 +36,7 @@ class ElasticSearchBackend extends BackendBase
     
     /**
      * {@inheritDoc}
-     * @see \DMA\Recomendations\Classes\Backends\BackendBase::settingsFields()
+     * @see \DMA\Recommendations\Classes\Backends\BackendBase::settingsFields()
      */
     public function settingsFields()
     {
@@ -45,7 +45,7 @@ class ElasticSearchBackend extends BackendBase
     
     /**
      * {@inheritDoc}
-     * @see \DMA\Recomendations\Classes\Backends\BackendBase::boot()
+     * @see \DMA\Recommendations\Classes\Backends\BackendBase::boot()
      */
     public function boot()
     {
@@ -54,7 +54,7 @@ class ElasticSearchBackend extends BackendBase
 
     /**
      * {@inheritDoc}
-     * @see \DMA\Recomendations\Classes\Backends\BackendBase::update()
+     * @see \DMA\Recommendations\Classes\Backends\BackendBase::update()
      */
     public function update($model)
     {
@@ -78,7 +78,7 @@ class ElasticSearchBackend extends BackendBase
     
     /**
      * {@inheritDoc}
-     * @see \DMA\Recomendations\Classes\Backends\BackendBase::populate()
+     * @see \DMA\Recommendations\Classes\Backends\BackendBase::populate()
      */
     public function populate()
     {
@@ -132,7 +132,7 @@ class ElasticSearchBackend extends BackendBase
     
     /**
      * {@inheritDoc}
-     * @see \DMA\Recomendations\Classes\Backends\BackendBase::suggest()
+     * @see \DMA\Recommendations\Classes\Backends\BackendBase::suggest()
      */
     public function suggest($user, array $itemKeys, $limit=null)
     {

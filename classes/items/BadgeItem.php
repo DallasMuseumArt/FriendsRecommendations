@@ -1,7 +1,7 @@
-<?php namespace DMA\Recomendations\Classes\Items;
+<?php namespace DMA\Recommendations\Classes\Items;
 
 use Log;
-use Dma\Recomendations\Classes\Items\ItemBase;
+use DMA\Recommendations\Classes\Items\ItemBase;
 
 
 
@@ -41,7 +41,7 @@ class BadgeItem extends ItemBase
 	
 	/**
 	 * {@inheritDoc}
-	 * @see \DMA\Recomendations\Classes\Items\ItemBase::addSettingsFields()
+	 * @see \DMA\Recommendations\Classes\Items\ItemBase::addSettingsFields()
 	 */
 	public function getSettingsFields()
 	{
@@ -50,7 +50,7 @@ class BadgeItem extends ItemBase
 	
 	/**
 	 * {@inheritDoc}
-	 * @see \DMA\Recomendations\Classes\Items\ItemBase::addFeatures()
+	 * @see \DMA\Recommendations\Classes\Items\ItemBase::addFeatures()
 	 */
 	public function getFeatures()
 	{
@@ -62,7 +62,7 @@ class BadgeItem extends ItemBase
 
 	/**
 	 * {@inheritDoc}
-	 * @see \DMA\Recomendations\Classes\Items\ItemBase::addFilters()
+	 * @see \DMA\Recommendations\Classes\Items\ItemBase::addFilters()
 	 */
 	public function getFilters()
 	{
@@ -71,7 +71,7 @@ class BadgeItem extends ItemBase
   
 	/**
 	 * {@inheritDoc}
-	 * @see \DMA\Recomendations\Classes\Items\ItemBase::addWeightFeatures()
+	 * @see \DMA\Recommendations\Classes\Items\ItemBase::addWeightFeatures()
 	 */
 	public function getWeightFeatures()
 	{
@@ -82,7 +82,7 @@ class BadgeItem extends ItemBase
 
 	/**
 	 * {@inheritDoc}
-	 * @see \DMA\Recomendations\Classes\Items\ItemBase::getItemRelations()
+	 * @see \DMA\Recommendations\Classes\Items\ItemBase::getItemRelations()
 	 */
 	public function getItemRelations()
 	{
@@ -93,7 +93,7 @@ class BadgeItem extends ItemBase
 
 	/**
 	 * {@inheritDoc}
-	 * @see \DMA\Recomendations\Classes\Items\ItemBase::getUpdateAtEvents()
+	 * @see \DMA\Recommendations\Classes\Items\ItemBase::getUpdateAtEvents()
 	 */
 	public function getUpdateEvents()
 	{

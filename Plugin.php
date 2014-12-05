@@ -1,10 +1,10 @@
-<?php namespace DMA\Recomendations;
+<?php namespace DMA\Recommendations;
 
 use Event;
 use System\Classes\PluginBase;
 
 /**
- * recomendations Plugin Information File
+ * Friends Recommendation Plugin Information File
  */
 class Plugin extends PluginBase
 {
@@ -17,8 +17,8 @@ class Plugin extends PluginBase
     public function pluginDetails()
     {
         return [
-            'name'        => 'Recomendations',
-            'description' => 'A simple recomendation engine for DMA Friends platform',
+            'name'        => 'Friends Recommendations',
+            'description' => 'A recommendation engine for DMA Friends platform',
             'author'      => 'Dallas Museum of Art',
             'icon'        => 'icon-thumbs-up'
         ];
@@ -39,7 +39,7 @@ class Plugin extends PluginBase
     public function registerPermissions()
     {
     	return [
-    	'dma.recomendations.access_admin'  => ['label' => 'Manage Recomendations'],
+    	'dma.recommendations.access_admin'  => ['label' => 'Manage Recommendation engine'],
     	];
     }
     
@@ -51,11 +51,11 @@ class Plugin extends PluginBase
     {
     	return [
     	'settings' => [
-        	'label'           => 'Recomendation engine',
-        	'description'     => 'Manage Friends recomendations settings.',
+        	'label'           => 'Recommendation Engine',
+        	'description'     => 'Manage Friends recommendations settings.',
         	'category'        => 'Friends',
         	'icon'            => 'icon-cog',
-        	'class'           => 'DMA\Recomendations\Models\Settings',
+        	'class'           => 'DMA\Recommendations\Models\Settings',
         	'order'           => 501,
         	],
     	];
@@ -68,20 +68,21 @@ class Plugin extends PluginBase
      */
     public function boot()
     {
+
       	// Register ServiceProviders
-        \App::register('\DMA\Recomendations\RecomendationServiceProvider');
+        \App::register('\DMA\Recommendations\RecomendationServiceProvider');
  
         // Bind Item events to the active recomendation engine
-        \Recomendation::bindEvents();
+        \Recommendation::bindEvents();
         
-        // Register recomendation items specific settings 
+        // Register Recommendation Items specific settings 
 	    Event::listen('backend.form.extendFields', function($form) {
-            if (!$form->model instanceof \DMA\Recomendations\Models\Settings) return;
+            if (!$form->model instanceof \DMA\Recommendations\Models\Settings) return;
             if ($form->getContext() != 'update') return;
 
             $extra = [];
             
-            foreach(\Recomendation::getRegisterItems() as $it){
+            foreach(\Recommendation::getRegisterItems() as $it){
                 if($it->adminEditable){
                     $fields = $it->getPluginSettings();
                     if(is_array($fields)){
