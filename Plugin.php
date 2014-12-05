@@ -70,7 +70,7 @@ class Plugin extends PluginBase
     {
 
       	// Register ServiceProviders
-        \App::register('\DMA\Recommendations\RecomendationServiceProvider');
+        \App::register('\DMA\Recommendations\RecommendationServiceProvider');
  
         // Bind Item events to the active recomendation engine
         \Recommendation::bindEvents();

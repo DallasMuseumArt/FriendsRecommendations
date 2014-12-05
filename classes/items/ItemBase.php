@@ -73,7 +73,7 @@ abstract class ItemBase
         'tools' => [
             'span'  => 'full',
             'type'  => 'partial',
-            'path'  => '@/plugins/dma/recomendations/models/settings/_tools_field.htm'
+            'path'  => '@/plugins/dma/recommendations/models/settings/_tools_field.htm'
         ],
         
     ];

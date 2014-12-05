@@ -1,10 +1,9 @@
-<?php namespace DMA\Recomendations\Classes\Backends;
+<?php namespace DMA\Recommendations\Classes\Backends;
 
-use Event;
 use Log;
+use Event;
 use DMA\Recomendations\Classes\RecomendationManager;
 use DMA\Recomendations\Classes\Exceptions\ItemNotFoundException;
-use Assetic\Exception\Exception;
 
 /**
  * @author Carlos Arroyo
