@@ -102,7 +102,7 @@ class ActivityItem extends ItemBase
 	public function getUpdateEvents()
 	{
 		return [
-		  'friends.activityCompleted'        
+		  'dma.friends.activity.completed'     
         ];
 	}	
 		

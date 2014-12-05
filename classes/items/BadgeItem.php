@@ -98,7 +98,7 @@ class BadgeItem extends ItemBase
 	public function getUpdateEvents()
 	{
 		return [
-		  'friends.badgeEarned'
+		  'dma.friends.badge.earned'
         ];
 	}	
 		
