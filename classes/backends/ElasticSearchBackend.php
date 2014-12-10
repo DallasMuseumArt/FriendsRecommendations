@@ -1,5 +1,6 @@
 <?php namespace DMA\Recommendations\Classes\Backends;
 
+use DB;
 use Log;
 use Event;
 
@@ -82,6 +83,12 @@ class ElasticSearchBackend extends BackendBase
      */
     public function populate()
     {
+        // Long run queries fill memory pretty quickly due to a default
+        // behavior of Laravel where all queries are log in memory. Disabling
+        // this log fix the issue. See http://laravel.com/docs/4.2/database#query-logging
+        
+        DB::connection()->disableQueryLog();
+         
         $client = $this->getClient();
         foreach($this->items as $it){
             $query      = $it->getQueryScope();
@@ -95,11 +102,12 @@ class ElasticSearchBackend extends BackendBase
             $bulk       = ['body'=>[]];
             
             while($current < $total){          
-                Log::info(sprintf('Processing batch [%s, %s] of %s', $start, $batch, get_class($it)));
+                Log::info(sprintf('Processing batch %s [%s, %s] of %s', get_class($it), $start, $batch, $total));
+                log::info( memory_get_usage());
                 $collection = $query->skip($start)->take($batch)->get();
                 foreach($collection as $row){
                     $data = $it->getItemData($row);
-
+                    
                     // Further information at http://www.elasticsearch.org/guide/en/elasticsearch/client/php-api/current/_indexing_operations.html
                     // Action
                     $bulk['body'][] = [
@@ -122,11 +130,14 @@ class ElasticSearchBackend extends BackendBase
                 // Bulk insert ElasticSearch
                 $this->client->bulk($bulk);
                 
+                unset($bulk);
+                
                 Log::info(sprintf('ElasticSearch bulk call [ %s : %s ] added ( %s )', $this->index, $it->getKey(), $current ));
             }
                    
         }
-                
+
+        DB::connection()->enableQueryLog();
     }
         
     
@@ -308,7 +319,7 @@ class ElasticSearchBackend extends BackendBase
     	if(is_null($this->client)){
             $params = [];
         	$params['hosts'] = [
-        	   'http://local.dev:9200',
+        	   'http://localhost:9200',
         	];
         
         	$this->client = new Elasticsearch\Client($params);
