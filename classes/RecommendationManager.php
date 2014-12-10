@@ -93,7 +93,7 @@ class RecommendationManager
     	$this->engine->boot($this);
     	
     	// Temporal
-    	$this->populateEngine();
+    	//$this->populateEngine();
     	
     }
     
