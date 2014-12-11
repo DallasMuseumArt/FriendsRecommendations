@@ -2,6 +2,7 @@
 
 use Event;
 use System\Classes\PluginBase;
+use DMA\Recommendations\Models\Settings;
 
 /**
  * Friends Recommendation Plugin Information File
@@ -77,11 +78,12 @@ class Plugin extends PluginBase
         
         // Register Recommendation Items specific settings 
 	    Event::listen('backend.form.extendFields', function($form) {
-            if (!$form->model instanceof \DMA\Recommendations\Models\Settings) return;
+            if (!$form->model instanceof  \DMA\Recommendations\Models\Settings) return;
             if ($form->getContext() != 'update') return;
 
             $extra = [];
-            
+
+            // ITEM SETTINGS
             foreach(\Recommendation::getRegisterItems() as $it){
                 if($it->adminEditable){
                     $fields = $it->getPluginSettings();
@@ -94,7 +96,19 @@ class Plugin extends PluginBase
                     }
                 }
             }
-                        
+            
+            
+            // BACKEND SETTNGS
+            $engine = \Recommendation::getActiveBackend();
+            $fields = $engine->getPluginSettings();
+            if(is_array($fields)){
+            	foreach($fields as $key => $opts){
+            		$opts['tab'] = 'Engine';//$engine->info['name'];
+            		$extra[$key] = $opts;
+            	}
+            } 
+
+                       
             $form->addTabFields($extra);
 	    });  
     }

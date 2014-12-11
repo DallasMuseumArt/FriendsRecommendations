@@ -6,6 +6,8 @@ use Event;
 
 use Elasticsearch;
 use Elasticsearch\Common\Exceptions\BadRequest400Exception;
+use Elasticsearch\Common\Exceptions\Missing404Exception;
+use Elasticsearch\Common\Exceptions\Curl\CouldNotConnectToHost;
 
 use DMA\Recommendations\Models\Settings;
 use DMA\Recommendations\Classes\Backends\BackendBase;
@@ -24,7 +26,7 @@ class ElasticSearchBackend extends BackendBase
     
     private $manager;
     private $client;    
-    private $index = 'friends';
+    private $index;
     public  $items;
     
     /**
@@ -41,7 +43,26 @@ class ElasticSearchBackend extends BackendBase
      */
     public function settingsFields()
     {
-        return [];
+        return [
+            'host' => [
+                'label' => 'ElasticSearch Host',
+                'span'  => 'auto',
+                'default' => 'http://localhost',
+                'required' => true
+            ],
+            'port' => [
+                'label' => 'ElasticSearch Port',
+                'span'  => 'auto',
+                'default' => '9200',
+                'required' => true
+            ],  
+            'index' => [
+                'label' => 'Recomendation engine index',
+                'span'  => 'auto',
+                'default' => 'friends',
+                'required' => true
+            ],                          
+        ];
     }
     
     /**
@@ -50,6 +71,8 @@ class ElasticSearchBackend extends BackendBase
      */
     public function boot()
     {
+        $this->index = $this->getSettingValue('index', 'friends');
+        // Setup mapping if don't exists
         $this->setupIndex();
     }
 
@@ -59,22 +82,29 @@ class ElasticSearchBackend extends BackendBase
      */
     public function update($model)
     {
-        // Get Recomendation Item using classname of the model
-        $it   = $this->getItemByModelClass($model);
-        // Get the data the engine is using of the instance
-        $data = $it->getItemData($model);
-        
-        // TODO : Find a way to do an atomic update instead of sending all data
-
-        $updateParams['index']          = $this->index;
-        $updateParams['type']           = strtolower($it->getKey());
-        $updateParams['id']             = $model->getKey();
-        $updateParams['body']['doc']    = $data;
-        
-        $client = $this->getClient();
-        $retUpdate = $client->update($updateParams);
-        
-        return $data;
+        if($client = $this->getClient()){
+            // Get Recomendation Item using classname of the model
+            $it   = $this->getItemByModelClass($model);
+            // Get the data the engine is using of the instance
+            $data = $it->getItemData($model);
+            
+            // TODO : Find a way to do an atomic update instead of sending all data
+            
+            $params['index']          = $this->index;
+            $params['type']           = strtolower($it->getKey());
+            $params['id']             = $model->getKey();
+            $params['body']['doc']    = $data;
+            
+            try{
+                $retUpdate = $client->update($params);
+            }catch(Missing404Exception $e){
+                $params['body'] = $params['body']['doc'];
+                $ret = $client->index($params);
+            }
+            
+            return $data;
+        }
+        return [];
     }
     
     /**
@@ -161,20 +191,18 @@ class ElasticSearchBackend extends BackendBase
         $params = [];
         $params['index'] = $this->index;
         
-        $client = $this->getClient();
-        
-        if(is_array($itemKeys)){
-            if (count($itemKeys) > 0){
-                $params['type'] = $itemKeys;
-            }    
-        } 
-        if(@$params['type']){
-            $ret = $client->indices()->deleteMapping($params);
-        }else{
-            $ret = $client->indices()->delete($params);
+        if($client = $this->getClient(false)){
+            if(is_array($itemKeys)){
+                if (count($itemKeys) > 0){
+                    $params['type'] = $itemKeys;
+                }    
+            } 
+            if(@$params['type']){
+                $ret = $client->indices()->deleteMapping($params);
+            }else{
+                $ret = $client->indices()->delete($params);
+            }
         }
-        
-        Log::debug($ret);
     }
     
     /**
@@ -278,25 +306,27 @@ class ElasticSearchBackend extends BackendBase
             $params['type']  = $it->getKey();
             $params['body']['query']['match']['_id'] = $user->getKey();
             
-            $results = $this->client->search($params);
-            $data = @$results['hits']['hits'];
-      
-            foreach($data as $row){
-                foreach($relationFeatures as $key => $feature){
-    
-                    $rel = @$row['_source'][$feature];
-                   
-                    if (!is_null($rel)){
-                       if(!is_array($rel)){
-                           $rel = [ $rel ];
-                       } 
+            if($client = $this->getClient()){
+                $results = $client->search($params);
+                $data = @$results['hits']['hits'];
+          
+                foreach($data as $row){
+                    foreach($relationFeatures as $key => $feature){
+        
+                        $rel = @$row['_source'][$feature];
                        
-                       foreach($rel as $pk){
-                            $relData[$key][] = [
-                               '_type' => $key,
-                       		   '_id'   => $pk
-                            ];
-                       }
+                        if (!is_null($rel)){
+                           if(!is_array($rel)){
+                               $rel = [ $rel ];
+                           } 
+                           
+                           foreach($rel as $pk){
+                                $relData[$key][] = [
+                                   '_type' => $key,
+                           		   '_id'   => $pk
+                                ];
+                           }
+                        }
                     }
                 }
             }
@@ -348,17 +378,40 @@ class ElasticSearchBackend extends BackendBase
 
     /**
      * Get an instance of ElasticSeach client
-     * @return \Elasticsearch\Client
+     * 
+     * @param boolean $silence 
+     * Don't throw exceptions if connection is not successful. Default is true
+     * 
+     * @return mixed 
+     * Return a \Elasticsearch\Client if connection settings are correct
+     * if setting are not correct null will be returned
      */
-    protected function getClient()
+    protected function getClient($silence=true)
     {
     	if(is_null($this->client)){
-            $params = [];
-        	$params['hosts'] = [
-        	   'http://local.dev:9200',
-        	];
-        
-        	$this->client = new Elasticsearch\Client($params);
+    	    try{
+        	    $host = $this->getSettingValue('host');
+        	    $port = $this->getSettingValue('port');
+        	    if(!is_null($host) && !is_null($port)){
+            	    $url  = sprintf('%s:%s', $host, $port);
+            	    
+                    $params = [];
+                	$params['hosts'] = [
+                	   $url
+                	];
+                
+                	$this->client = new Elasticsearch\Client($params);
+                	$this->client->ping();
+                	
+        	    }
+    	    }catch(\Exception $e){
+    	        if($silence){
+    	           $this->client = null;
+    	           \Log::critical('Can connect ElasticSearch host with this details', $params);
+    	        }else{
+    	            throw $e;
+    	        }
+    	    }
     	}
     	return $this->client;
     }   
@@ -379,11 +432,15 @@ class ElasticSearchBackend extends BackendBase
     	$params['index'] = $index;
     
     	try{
-    	    $client = $this->getClient();
-    		$ret = $client->indices()->create($params);
-    		return $ret['acknowledged'];
+    	    if($client = $this->getClient()){
+    		  $ret = $client->indices()->create($params);
+    		  return $ret['acknowledged'];
+    	    }else{
+    	        return false;
+    	    }
     	}catch(BadRequest400Exception $e){
-    		return true;
+            // Index already exists
+    	    return true;
     	}
     	return false;
     }

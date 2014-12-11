@@ -12,7 +12,7 @@ class Settings extends Model{
     
     public $implement = ['System.Behaviors.SettingsModel'];
     
-    public $settingsCode = 'friends_recommendations_settings';
+    public $settingsCode = 'dma_friends_recommendations_settings1';
     public $settingsFields = 'fields.yaml';    
     
 
@@ -22,8 +22,31 @@ class Settings extends Model{
      */
     public function initSettingsData()
     {
-
+        /*
+        // Set default values all backends
+        foreach(Recommendation::getRegisterBackends() as $engine){
+        	$fields = $engine->getPluginSettings();
+        	$this->setDefaultsFromFields($fields);
+        }
+        
+        // Set default for items
+        foreach(Recommendation::getRegisterItems() as $it){
+            $fields = $it->getPluginSettings();
+            $this->setDefaultsFromFields($fields);
+        }
+        */
     }        
         
+    private function setDefaultsFromFields($fields)
+    {
+        if(is_array($fields)){
+        	foreach($fields as $key => $opts){
+        		$default = @$opts['default'];
+        		if(!is_null($default)){
+        			$this->{$key} = $default;
+        		}
+        	}
+        }
+    } 
     
  }

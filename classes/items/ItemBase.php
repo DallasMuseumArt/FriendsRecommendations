@@ -37,6 +37,7 @@ abstract class ItemBase
             'type'  => 'number', 
             'default' => 5,
             'commentAbove' => 'This value only affects this recommendations item.',
+            'required' => true
         ],
         'active' => [
             'label' => 'Is active',
@@ -231,15 +232,24 @@ abstract class ItemBase
         if (!is_null($fieldSettings)){
         	
         	if (count($options) > 0){
-        		$opts    = &$fieldSettings['options'];     		
-        		
-        		if($emptyValue){
+        		$opts     = &$fieldSettings['options'];   
+                $default  = null;
+                
+       		    if($emptyValue){
         		  $opts[null] = '--empty--';
         		}
         		
         		forEach($options as $k){
         		    $k = (is_array($k)) ? array_shift($k) : $k;
         			$opts[$k] = ucfirst($k);
+        			
+        			if($emptyValue && is_null($default)){
+        			    $default = $k;
+        			}
+        		}
+        		
+        		if(!is_null($default)){
+        		   $fieldSettings['default'] = $default;
         		}
         		
         	}else{
@@ -247,6 +257,18 @@ abstract class ItemBase
         	}
         }       
     } 
+    
+    /**
+     * Get settings value of this Recommendation item
+     *
+     * @param string $name
+     * @param mixed $default
+     */
+    protected function getSettingValue($name, $default = null)
+    {
+    	return Settings::get(strtolower($this->getKey()) . '_' . $name , $default);
+    }
+    
     
     /**
      * Return all declared fields and properties in this Recommendation Item
@@ -281,7 +303,7 @@ abstract class ItemBase
      */
     public function getActiveFeatures()
     {
-        return Settings::get(strtolower($this->getKey()) .'_features', []);
+        return $this->getSettingValue('features', []);
     }
     
 
@@ -298,7 +320,7 @@ abstract class ItemBase
      */
     public function getActiveFilters()
     {
-    	return Settings::get(strtolower($this->getKey()) .'_filters', []);
+    	return $this->getSettingValue('filters', []);
     }
 
     /**
@@ -315,7 +337,7 @@ abstract class ItemBase
      */
     public function getActiveWeightFeature()
     {
-    	$feature = Settings::get(strtolower($this->getKey()) .'_weight_by', null);
+        $feature = $this->getSettingValue('weight_by', null);
     	$feature = ($feature == '') ? null : $feature;
     	return $feature;
     }    

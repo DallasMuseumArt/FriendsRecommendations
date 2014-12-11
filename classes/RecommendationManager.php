@@ -47,7 +47,9 @@ class RecommendationManager
     		// Fill detail information used by the Admin interface
     	    $it->info = $details;
             // Is this item active
-    	    $it->active = Settings::get(strtolower($it->getKey()) .'_active', false);  	    
+    	    $it->active = Settings::get(strtolower($it->getKey()) .'_active', true);  
+    	    // Non editable items should be active always
+    	    $it->active = (!$it->adminEditable) ? true : $it->active;
     	    
     	    $this->items[$it->getKey()] = $it;
     	
@@ -102,6 +104,15 @@ class RecommendationManager
     public function getRegisterBackends()
     {
     	return $this->backends;
+    }
+
+    /**
+     * Return the active Recommendation backend engine
+     * @return DMA\Recommendations\Classes\Backends\BackendBase
+     */
+    public function getActiveBackend()
+    {
+    	return $this->engine;
     }
     
     /**

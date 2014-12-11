@@ -14,4 +14,5 @@ A pluging for Friends platform for give Activities and Badges recommendations us
 * Extract this repository into plugins/dma/recommendations
 * In plugins/dma/recommendations folder run composer install.
 * Enable the "Friends Recommendations" Plugin
+* Go to Recommendation engine settings under Friends settings section and enable which feature per Item the engine should use. 
 

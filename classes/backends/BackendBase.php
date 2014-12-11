@@ -2,6 +2,7 @@
 
 use Log;
 use Event;
+use DMA\Recommendations\Models\Settings;
 use DMA\Recomendations\Classes\RecomendationManager;
 use DMA\Recomendations\Classes\Exceptions\ItemNotFoundException;
 
@@ -46,6 +47,35 @@ abstract class BackendBase
      * @return array
      */
     abstract public function settingsFields();    
+    
+    /**
+     * Get settings value for this backend 
+     * 
+     * @param string $name
+     * @param mixed $default
+     */
+    protected function getSettingValue($name, $default = null)
+    {
+        return Settings::get(strtolower($this->getKey()) . '_' . $name , $default);
+    }
+    
+    /**
+     * Get recommendation item settings fields including commong field settings
+     * All settings are prefixed with the key identifier of the recommendation item.
+     *
+     * @return array
+     */
+    public function getPluginSettings()
+    {
+        $settings = [];
+         
+        $key = strtolower($this->getKey());
+        foreach($this->settingsFields() as $k => $v){
+        	$settings[$key . '_' . $k] = $v;
+        }
+        
+        return $settings;
+    }
     
     /**
      * Always called by the recomendation engine.
