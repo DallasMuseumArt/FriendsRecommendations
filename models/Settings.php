@@ -12,7 +12,7 @@ class Settings extends Model{
     
     public $implement = ['System.Behaviors.SettingsModel'];
     
-    public $settingsCode = 'dma_friends_recommendations_settings1';
+    public $settingsCode = 'dma_friends_recommendations_settings';
     public $settingsFields = 'fields.yaml';    
     
 
