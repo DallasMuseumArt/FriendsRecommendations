@@ -81,7 +81,7 @@ class ElasticSearchBackend extends BackendBase
      * {@inheritDoc}
      * @see \DMA\Recommendations\Classes\Backends\BackendBase::populate()
      */
-    public function populate()
+    public function populate(array $itemKeys = null)
     {
         // Long run queries fill memory pretty quickly due to a default
         // behavior of Laravel where all queries are log in memory. Disabling
@@ -90,12 +90,20 @@ class ElasticSearchBackend extends BackendBase
         DB::connection()->disableQueryLog();
          
         $client = $this->getClient();
+    
+        $itemKeys = (is_null($itemKeys)) ? array_keys($this->items) : array_map('strtolower', $itemKeys);        
+        
         foreach($this->items as $it){
+            $key        = strtolower($it->getKey());
+            
+            if(!in_array($key, $itemKeys)){
+                continue; // Skip item
+            }
+  
             $query      = $it->getQueryScope();
             $total      = $query->count();
-            $key        = strtolower($it->getKey());
             $current    = 0;
-            $batch      = 1000;
+            $batch      = 50;
             $start      = 0;
             
             // Data to be inserted or updated in ElasticSearch
@@ -103,7 +111,8 @@ class ElasticSearchBackend extends BackendBase
             
             while($current < $total){          
                 Log::info(sprintf('Processing batch %s [%s, %s] of %s', get_class($it), $start, $batch, $total));
-                log::info( memory_get_usage());
+                log::debug( 'Memory usage ' . round(memory_get_usage() / 1048576, 2) . 'Mb');
+                
                 $collection = $query->skip($start)->take($batch)->get();
                 foreach($collection as $row){
                     $data = $it->getItemData($row);
@@ -124,22 +133,49 @@ class ElasticSearchBackend extends BackendBase
                     $bulk['body'][] = $data;
                     
                     $current ++;
+                    // Reset maximum execution timeout
+                    set_time_limit(60);
                 }
                 $start = $start + $batch;
                 
                 // Bulk insert ElasticSearch
-                $this->client->bulk($bulk);
+                $client->bulk($bulk);
                 
+                unset($collection);
                 unset($bulk);
                 
-                Log::info(sprintf('ElasticSearch bulk call [ %s : %s ] added ( %s )', $this->index, $it->getKey(), $current ));
+                Log::info(sprintf('ElasticSearch bulk call [ %s : %s ] added ( %s )', $this->index, $it->getKey(), $batch ));
+                log::debug( 'Memory usage ' . round(memory_get_usage() / 1048576, 2) . 'Mb');
             }
-                   
+    
         }
 
         DB::connection()->enableQueryLog();
     }
         
+    /**
+     * {@inheritDoc}
+     * @see \DMA\Recommendations\Classes\Backends\BackendBase::clean()
+     */
+    public function clean(array $itemKeys = null){
+        $params = [];
+        $params['index'] = $this->index;
+        
+        $client = $this->getClient();
+        
+        if(is_array($itemKeys)){
+            if (count($itemKeys) > 0){
+                $params['type'] = $itemKeys;
+            }    
+        } 
+        if(@$params['type']){
+            $ret = $client->indices()->deleteMapping($params);
+        }else{
+            $ret = $client->indices()->delete($params);
+        }
+        
+        Log::debug($ret);
+    }
     
     /**
      * {@inheritDoc}
@@ -319,7 +355,7 @@ class ElasticSearchBackend extends BackendBase
     	if(is_null($this->client)){
             $params = [];
         	$params['hosts'] = [
-        	   'http://localhost:9200',
+        	   'http://local.dev:9200',
         	];
         
         	$this->client = new Elasticsearch\Client($params);

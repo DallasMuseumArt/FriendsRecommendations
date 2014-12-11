@@ -64,9 +64,24 @@ abstract class BackendBase
     
     /**
      * Load all data into the backend
+     * 
+     * @param array $itemKeys list of itmeKeys to populate.
+     * 
+     * The item has to be active in order to ingest data into the recomendation engine.
+     * If not given an array all active itmes will be ingested. 
      */
-    abstract public function populate();
+    abstract public function populate(array $itemKeys = null);
 
+    /**
+     * Clean all data into the backend
+     *
+     * @param array $itemKeys list of itmeKeys to be deleted.
+     *
+     * If not given an array all active itmes will be ingested.
+     */
+    abstract public function clean(array $itemKeys = null);
+    
+    
     /**
      * Return and array of recomendations of the given user.
      * 

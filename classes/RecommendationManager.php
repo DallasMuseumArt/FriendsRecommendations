@@ -91,10 +91,7 @@ class RecommendationManager
     	});
 
     	$this->engine->boot($this);
-    	
-    	// Temporal
-    	//$this->populateEngine();
-    	
+        	
     }
     
     
@@ -166,9 +163,27 @@ class RecommendationManager
     
     /**
      * Populate all data of each item into the active Recomendation backend engine 
+     * 
+     * @param array $itemKeys list of itmeKeys to populate.
+     * 
+     * The item has to be active in order to ingest data into the recomendation engine.
+     * If not given an array all active itmes will be ingested.
      */
-    public function populateEngine()
+    public function populateEngine(array $itemKeys = null)
     {
-        $this->engine->populate();
+        $this->engine->populate($itemKeys);
     }
+    
+    
+    /**
+     * Clean all data into the backend
+     *
+     * @param array $itemKeys list of itmeKeys to be deleted.
+     *
+     * If not given an array all active itmes will be ingested.
+     */
+     public function cleanEngine(array $itemKeys = null)
+     {
+        $this->engine->clean($itemKeys);
+     }
 }

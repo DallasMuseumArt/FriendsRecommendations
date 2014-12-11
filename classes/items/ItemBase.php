@@ -68,13 +68,7 @@ abstract class ItemBase
             'type'  => 'dropdown',
             'options' => [],
             'commentAbove' => 'Boost recommendations items by:',
-        ],
-        
-        'tools' => [
-            'span'  => 'full',
-            'type'  => 'partial',
-            'path'  => '@/plugins/dma/recommendations/models/settings/_tools_field.htm'
-        ],
+        ]
         
     ];
 
@@ -122,36 +116,44 @@ abstract class ItemBase
     public function getItemData($model)
     {
        	$data = [];
-       	       	
+
        	foreach($this->getItemDataFields() as $field){
        	    try {
        	        // Get field name
                 $field = $field[0];
+                $value = null;
        	        
        	        // Check if a method exists for this feature
        	        $prepareMethod = 'get' . ucfirst($field);
        	        if (! method_exists($this, $prepareMethod) ){
-           	        
-               	    $value = $model->{$field};
-               	    // Check if is the feature is a collection result of a relatioship
-               	    if (is_a($value, 'Illuminate\Database\Eloquent\Collection')){
-               	        // If so return array of PKs
-               	        $value = $value->map(function($r){
-                            return($r->getKey());
-               	        });
-               	    }
+                    // Using this nasty exception to determinate if 
+                    // is a relation or a simple field
+       	            try {
+       	                //log::info( memory_get_usage() );
+
+       	                $value = [];
+       	                $model->{$field}()->chunk(200, function($chunk) use (&$value){
+       	                    foreach($chunk as $row){
+       	                        $value[] = $row->getKey();
+       	                    }
+       	                });
+       	               
+       	            }catch (\BadMethodCallException $e){
+       	                $value = $model->{$field};
+       	            }
+     
        	        }else{
        	            // Call prepare method
        	            $value = $this->{$prepareMethod}($model);
        	        }
-
-            /*   
+                
+              
        	    } catch(\Exception $e) {
        	        $value = null;
         	    Log::error(sprintf('Extracting Item feature [%s] in [%s]', $field, get_class($this)), [
                     'message' => $e->getMessage(),
                     //'stack'   => $e->getTraceAsString()
-       	       ]); */
+       	       ]); 
        	    } finally {
        	        $data[$field] = $value or '';
        	        
