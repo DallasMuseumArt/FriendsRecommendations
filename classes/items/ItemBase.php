@@ -128,17 +128,24 @@ abstract class ItemBase
        	        $prepareMethod = 'get' . ucfirst($field);
        	        if (! method_exists($this, $prepareMethod) ){
                     // Using this nasty exception to determinate if 
-                    // is a relation or a simple field
+                    // it is a relation or a simple field. I am doing this 
+                    // because other methods I try always trigger a query in 
+                    // in the relationship causing a memory leak when 
+                    // the relationship is a large dataset 
        	            try {
-       	                //log::info( memory_get_usage() );
-
-       	                $value = [];
-       	                $model->{$field}()->chunk(200, function($chunk) use (&$value){
-       	                    foreach($chunk as $row){
-       	                        $value[] = $row->getKey();
-       	                    }
-       	                });
+       	                // log::debug( 'Memory usage ' . round(memory_get_usage() / 1048576, 2) . 'Mb');
+                        // Log::info($model->getKey());
+                        // Log::info(get_class($model));
+                        // Log::info($model->{$field}()->count());
+       	                
+                        $key = $model->{$field}()->getRelated()->getQualifiedKeyName();
+       	                $value = $model->{$field}()->select($key)
+       	                                           ->distinct() 
+       	                                           ->lists($key);
+       	                //Log::info($value);
        	               
+       	                
+       	                // log::debug( 'Memory usage ' . round(memory_get_usage() / 1048576, 2) . 'Mb');
        	            }catch (\BadMethodCallException $e){
        	                $value = $model->{$field};
        	            }

@@ -60,13 +60,23 @@ class RecommendationManager
     
     /**
      * Return an array of all register Recommendation Items
+     * @param boolean $excludeHidden Exclude hidden items
      * @return array
      */
-    public function getRegisterItems()
+    public function getRegisterItems($excludeHidden=false)
     {
-        return $this->items;
+        if ($excludeHidden){
+            return array_filter($this->items, function($it){
+                return $it->adminEditable;
+            });
+        }else{
+            return $this->items;
+        }
+        
     }
    
+    
+    
     /**
      * Register recomentation backend
      * @param array $backends classnames of recomedation backends
