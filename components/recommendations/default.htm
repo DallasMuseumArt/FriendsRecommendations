@@ -1,9 +1,7 @@
 {% for item, grp  in recommendations %}
-	
+	<h3>{{ item }}</h3>	
 	{% if grp %}
-		<div class="pull-right">	
-			<!--  <h4>{{ item }}</h4> -->
-		
+		<div class="row">	
 			{% for recommend in grp %}
 				{{ recommend|raw }}
 			{% endfor %}
