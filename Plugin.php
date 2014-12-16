@@ -61,7 +61,13 @@ class Plugin extends PluginBase
         	],
     	];
     }
-        
+
+    public function registerComponents()
+    {
+    	return [
+        	'DMA\Recommendations\Components\Recommendations' => 'Recommendations',
+    	];
+    }    
         
     /**
 	 * {@inheritDoc}

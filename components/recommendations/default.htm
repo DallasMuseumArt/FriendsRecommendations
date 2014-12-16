@@ -1,0 +1,21 @@
+{% for item, grp  in recomendations %}
+	<div class="col-md-3 col-sm-4">	
+		<h4>{{ item }}</h4>
+	
+	{% for model  in grp %}
+		
+		<div>
+	    	<div class="friends-badge preview">
+	        	<h4>{{ model.title }}</h4>
+	
+		        <div class="description">
+		            {{ model.excerpt }}
+		        </div>
+			    
+	    	</div>
+    	</div>
+		
+	{% endfor %}
+	</div>
+	
+{% endfor %}
