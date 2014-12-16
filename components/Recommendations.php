@@ -1,6 +1,7 @@
 <?php namespace DMA\Recommendations\Components;
 
 use Auth;
+use View;
 use Request;
 use Recommendation;
 use Cms\Classes\Page;
@@ -33,6 +34,12 @@ class Recommendations extends ComponentBase
                 'default'     => $opts,
 
             ],                       
+            'viewTemplate' => [
+                'title'       => 'View template',
+                'description' => 'Comma separated items to recommend. Options are: [ ' . $opts . ' ]',
+                'type'        => 'string',
+                'default'     => 'dma.friends::%sPreview',
+            ],
         ];
     }
     
@@ -48,7 +55,6 @@ class Recommendations extends ComponentBase
         if( $items = $this->property('recomend')){
             $items = explode(',', $items);
             $items = array_map('trim', $items);
-            
             return Recommendation::suggest($user, $items);
         }
         return [];
@@ -58,9 +64,18 @@ class Recommendations extends ComponentBase
     
     protected function prepareVars($vars = [])
     {
-        
-        $this->page['recomendations'] = $this->getRecomendations();
        
+        $renders = [];
+        foreach($this->getRecomendations() as $item => $grp) {
+            foreach($grp as $model){
+                $viewname = sprintf($this->property('viewTemplate'), $item);
+                $renders[$item][]  = View::make($viewname, ['model' => $model, 'class' => 'col-md-3 col-sm-4'])->render();
+            }
+            $this->page['recommendations'] = $renders;
+
+        }
+        
+        
         foreach($vars as $key => $value){
             // Append or refresh extra variables
             $this->page[$key] = $value;

@@ -171,7 +171,6 @@ abstract class BackendBase
                     $fn = $fn->bindTo($this);                    
                 } else {
                     // Bind and event without clouser
-                    Log::debug($fn);
                     $evt  = $fn; 
                     $item = $it;
                     // Trying to be smart here.
