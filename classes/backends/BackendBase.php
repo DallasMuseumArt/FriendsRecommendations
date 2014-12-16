@@ -163,19 +163,23 @@ abstract class BackendBase
     {
         foreach($this->items as $it){
             $events = $it->getUpdateEvents();
+            
             foreach($events as $evt => $fn){
                 
                 if (is_callable($fn)){
                     // Change context of the clouse from the Item to the current Backend engine
                     $fn = $fn->bindTo($this);                    
                 } else {
-                    // Bind and event with out clouser
+                    // Bind and event without clouser
+                    Log::debug($fn);
                     $evt  = $fn; 
                     $item = $it;
                     // Trying to be smart here.
                     // Create a generic clouser. This clouser will update
                     // in the recomendation engine any maching Recomendation item in the engine.
-                    $fn = function() use ($item){
+                    $fn = function() use ($item, $evt){
+                        //Log::debug('called ' .  $evt);
+                        
                         foreach(func_get_args() as $arg){
                             if(is_object($arg)){
                                 if(is_subclass_of($arg, 'October\Rain\Database\Model')){

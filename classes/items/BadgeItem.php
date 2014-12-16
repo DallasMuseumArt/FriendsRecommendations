@@ -97,9 +97,13 @@ class BadgeItem extends ItemBase
 	 */
 	public function getUpdateEvents()
 	{
-		return [
-		  'dma.friends.badge.completed'
-        ];
+	    $k = $this->getModel();
+	    $k = (substr( $k, 0, 1 ) === "\\") ? substr($k, 1, strlen($k)) : $k;
+	    return [
+		  'dma.friends.badge.completed',
+		  'eloquent.created: ' . $k,
+		  'eloquent.updated: ' . $k
+		];		
 	}	
 		
 	
