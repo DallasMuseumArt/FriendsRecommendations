@@ -4,6 +4,7 @@ use Log;
 use Str;
 use DMA\Recommendations\Classes\Items\ItemBase;
 use Doctrine\DBAL\Query\QueryBuilder;
+use Carbon\Carbon;
 
 
 
@@ -70,7 +71,7 @@ class ActivityItem extends ItemBase
 	public function getFilters()
 	{
 		return [
-		  ['time_restrictions',       'type' => 'object']
+		  ['time_restrictions', 'type' => 'object' ]
         ];
 	}	
 	
@@ -111,6 +112,33 @@ class ActivityItem extends ItemBase
         ];
 	}	
 		
+	// SPECIAL METHOD FOR OVERRIDE OR EXTEND ELASTICSEARCH MAPPING
+	/**
+	 * Special method called by ElasticSearchBackend. 
+	 * @return array
+	 */
+	public function getItemMapping($mapping)
+	{
+	    /*
+	    $mapping['date_detection'] = false;
+	    
+	    // Define a dynamic template for activity times
+	    $mapping["dynamic_templates"] = [
+    	    [
+    	        "time_fields" => [
+    	           "match" =>  "start_time",
+    	           "match_pattern" => "regex",
+    	           "mapping" => [
+    	               "type"=> "date",
+    	               "format" => 'date_time_no_millis'
+    	           ]
+    	       ]
+    	    ]
+	    ];	    
+	    */
+	    return $mapping;
+	}
+	
 	
 	// PREPARE DATA METHODS
 	public function getCategories($model){
@@ -125,43 +153,68 @@ class ActivityItem extends ItemBase
 	}
 	
 	public function getTime_restrictions($model){
-	   
-        $dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+	       
+	    $restrictions = [];
+	    $keys         = ['date_begin', 'date_end', 'start_time', 'end_time', 'days'];
+	    $dayNames     = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+       
+        $type         = $model->time_restriction;
+        $data         = $model->time_restriction_data; // Get deserializated time restrictions data
         
-	    if($restrictions = $model->time_restriction_data){
-	       $days = [];
-	       foreach($restrictions['days'] as $key => $value){
-	           $days[ $dayNames[$key-1] ] = $value;
-	       }
-	       $restrictions['days'] = $days;	         
-	    }
-	    
-	    $restrictions['type']       = $model->time_restriction;
-	    
-	    $restrictions['date_begin'] = $this->carbonToIso($model->date_begin);
-	    $restrictions['date_end']   = $this->carbonToIso($model->date_end);
+        // Reset values
+        foreach($keys as $key){
+            $restrictions[$key] = null;
+        }
+        
+        switch($type){
+            case 0:
+                break;
+            
+            case 1: // Days / Hours
+                $days = [];
+                foreach($data['days'] as $key => $value){
+                    $days[ $dayNames[$key-1] ] = $value;
+                }
+                $restrictions['days'] = $days;
 
+                $restrictions['start_time'] = $this->normalizeTime($data['start_time']);
+                $restrictions['end_time']   = $this->normalizeTime($data['end_time']);
+                
+                break;
+            
+            case 2: // Date range
+                $restrictions['date_begin'] = $this->carbonToIso($model->date_begin, 'date');
+                $restrictions['date_end']   = $this->carbonToIso($model->date_end, 'date');
+                
+                $restrictions['start_time'] = $this->carbonToIso($model->date_begin, 'time');
+                $restrictions['end_time']   = $this->carbonToIso($model->date_end, 'time');
+
+                
+                break;
+        }
+        // Store type
+	    $restrictions['type']       = $type;
+	    
 	    return $restrictions;
 	}
 	
-    protected function carbonToIso($carbonDate)
+    protected function carbonToIso($carbonDate, $bit=null)
     {
         if(!is_null($carbonDate)){
-        	return $carbonDate->toIso8601String();
+            if (is_null($bit)){
+        	   return $carbonDate->toIso8601String();
+            }else if ($bit == 'date'){
+               return $carbonDate->toDateString();
+            }else if ($bit == 'time'){
+                return $carbonDate->toTimeString();
+            }
         }        
     }
-
-	public function getDate_begin($model)
-	{
-	    if($date = $model->date_begin){
-	       return $date->toIso8601String();
-	    }
-	}
-
-	public function getDate_end($model)
-	{
-		if($date = $model->date_end){
-			return $date->toIso8601String();
-		}
-	}	
+    
+    protected function normalizeTime($time)
+    {
+        if(!is_null($time)){
+            return Carbon::parse($time)->toTimeString();
+        }
+    }
 }

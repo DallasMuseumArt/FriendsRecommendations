@@ -175,7 +175,7 @@ abstract class BackendBase
                     $item = $it;
                     // Trying to be smart here.
                     // Create a generic clouser. This clouser will update
-                    // in the recomendation engine any maching Recomendation item in the engine.
+                    // the recomendation engine of any maching Recomendation item in the engine.
                     $fn = function() use ($item, $evt){
                         //Log::debug('called ' .  $evt);
                         

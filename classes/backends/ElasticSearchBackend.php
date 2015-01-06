@@ -200,6 +200,7 @@ class ElasticSearchBackend extends BackendBase
             if(@$params['type']){
                 $ret = $client->indices()->deleteMapping($params);
             }else{
+                Log::debug('Cleaning all');
                 $ret = $client->indices()->delete($params);
             }
         }
@@ -501,10 +502,19 @@ class ElasticSearchBackend extends BackendBase
             $properties[$field] = $mapping;
         }
          
-        return [
+        $itemMapping = [
             '_source' => [ 'enabled' => true ],
             'properties' => $properties
         ];
+        
+        // Special case get dynamic templates if getItemMapping exist in Item
+        if(method_exists($item, 'getItemMapping')){
+            if($extra = $item->getItemMapping($itemMapping)){
+                $itemMapping = array_merge($itemMapping, $extra);
+            }
+        }
+        
+        return $itemMapping;
     }
     
 }
