@@ -468,7 +468,7 @@ class ElasticSearchBackend extends BackendBase
                 // sorting by the size of the user array if it exists.
                 
                 $sort['_script'] = [
-                    'script' => "doc['$relUserField'].values.length",
+                    'script' => "doc['$relUserField'].values.size()",
                     'type'   => 'number',
                     'order'  => 'desc'
                 ];
