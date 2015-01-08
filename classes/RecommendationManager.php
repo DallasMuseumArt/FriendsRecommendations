@@ -51,10 +51,9 @@ class RecommendationManager
     	    // Non editable items should be active always
     	    $it->active = (!$it->adminEditable) ? true : $it->active;
     	    
-    	    $this->items[$it->getKey()] = $it;
+    	    $this->items[strtolower($it->getKey())] = $it;
     	
     	}
-    	
     }
 
     
@@ -143,17 +142,87 @@ class RecommendationManager
     public function suggest($user, $itemKeys=null, $limit=null)
     {
         if(!is_null($this->engine)){
+            
+            $keys = $this->getItemKeys($itemKeys);           
+            return $this->engine->suggest($user, $keys, $limit);
+        }
+        return [];
+    }
+    
+    /**
+     * Return and array of top or most popular recommentaion items.
+     * 
+     * @param RainLab\User\Models\User $user
+     * If User is given recomendation items from the user will be excluded.
+     *  
+     * @param array $itemKeys 
+     * An array of Items requested to be returned by the recomendation engine.
+     * 
+     * @param int $limit 
+     * If limit is not given configured values per Item in the admin interface
+     * will be use.
+     * 
+     * @return Illuminate\Support\Collection
+     * Mixed Collection of October\Rain\Database\Model
+     */
+    public function getTopItems($user=null, array $itemKeys=null, $limit=null)
+    {
+        if(!is_null($this->engine)){
+    
+            $keys = $this->getItemKeys($itemKeys);
+            return $this->engine->getTopItems($keys, $user, $limit);
+        }
+        return [];
+    }
 
+    /**
+     * Return and array of recommentaion items sorted by weight field if is defined
+     * in the recommendation item. If not weight field configured or active Items will be
+     * returned in the default natural order of the Backend implemented.
+     *
+     * @param RainLab\User\Models\User $user
+     * If User is given recomendation items from the user will be excluded.
+     *
+     * @param array $itemKeys 
+     * An array of Items requested to be returned by the recomendation engine.
+     *  
+     * @param int $limit 
+     * If limit is not given configured values per Item in the admin interface
+     * will be use.
+     *
+     * @return Illuminate\Support\Collection
+     * Mixed Collection of October\Rain\Database\Model
+     */ 
+    public function getItemsByWeight($user=null, array $itemKeys=null, $limit=null)
+    {
+        if(!is_null($this->engine)){
+    
+            $keys = $this->getItemKeys($itemKeys);  
+            return $this->engine->getItemsByWeight($keys, $user, $limit);
+        }
+        return [];
+    }
+    
+    /**
+     * Internal method for cleaning and getting Active ItemKeys
+     * 
+     * @param array $itemKeys 
+     * An array of Items requested to be returned by the recomendation engine.
+     * 
+     * @return array
+     */
+    private function getItemKeys(array $itemKeys=null)
+    {
+        if(!is_null($this->engine)){
             if (is_array($itemKeys)){
-                $itemKeys = (count($itemKeys) == 0) ? null : $itemKeys; 
+                $itemKeys = (count($itemKeys) == 0) ? null : $itemKeys;
             }else{
                 $itemKeys = [strtolower($itemKeys)];
             }
-            
-            
+                        
             // Get all item keys is null or empty array
             $itemKeys = (is_null($itemKeys)) ? array_keys($this->items) : $itemKeys;
-
+                        
             // Make sure they are lowercase and remove inactive items
             $keys = [];
             foreach($itemKeys as $key){
@@ -162,11 +231,14 @@ class RecommendationManager
                     $keys[] = $key;
                 }
             }
-           
-            return $this->engine->suggest($user, $keys, $limit);
+                        
+            return $itemKeys;
         }
+        
         return [];
+     
     }
+    
     
     /**
      * Suscribe all events of the active Items into the active Recomendation backend engine

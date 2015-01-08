@@ -130,6 +130,47 @@ abstract class BackendBase
     abstract public function suggest($user, array $itemKeys, $limit=null);
     
     /**
+     * Return and array of top or most popular recommentaion items.
+     * 
+     * 
+     * @param array $itemKeys 
+     * An array of Items requested to be returned by the recomendation engine.
+     * 
+     * @param RainLab\User\Models\User $user
+     * If User is given recomendation items from the user will be excluded.
+     * 
+     * @param int $limit 
+     * If limit is not given configured values per Item in the admin interface
+     * will be use.
+     * 
+     * @return Illuminate\Support\Collection
+     * Mixed Collection of October\Rain\Database\Model
+     */
+    abstract public function getTopItems(array $itemKeys,  $user=null, $limit=null);
+
+    
+    /**
+     * Return and array of recommentaion items sorted by weight field if is defined
+     * in the recommendation item. If not weight field configured or active Items will be
+     * returned in the default natural order of the Backend implemented.
+     *
+     * @param array $itemKeys 
+     * An array of Items requested to be returned by the recomendation engine.
+     * 
+     * @param RainLab\User\Models\User $user
+     * If User is given recomendation items from the user will be excluded.
+     * 
+     * @param int $limit 
+     * If limit is not given configured values per Item in the admin interface
+     * will be use.
+     *
+     * @return Illuminate\Support\Collection
+     * Mixed Collection of October\Rain\Database\Model
+     */    
+    abstract public function getItemsByWeight(array $itemKeys, $user=null, $limit=null);
+    
+    
+    /**
      * Return Recomendation Item instance by model class
      * 
      * @param October\Rain\Database\Model $model

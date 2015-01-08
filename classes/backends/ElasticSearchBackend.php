@@ -14,6 +14,7 @@ use DMA\Recommendations\Classes\Backends\BackendBase;
 use DMA\Recommendations\Classes\RecomendationManager;
 
 use Illuminate\Support\Collection;
+use GuzzleHttp\json_decode;
 
 class ElasticSearchBackend extends BackendBase
 {
@@ -214,24 +215,32 @@ class ElasticSearchBackend extends BackendBase
     {
         
         $relData = $this->getUserRelatedItemFeatureData($user);
-        
+                
         // Get combine items features
         $result = [];
         foreach($itemKeys as $key){
             $rel = @$relData[$key];
             //$rel = (is_null($rel)) ? [] : $rel; 
             if(!is_null($rel)){
-                $col = $this->query($rel, $key, $limit);
+                $col = $this->queryRecommendations($rel, $key, $limit);
             }else{
-                $col=[];
+                $col=new Collection([]);
             }
             $result[$key] = $col;
         }
   
         return new Collection($result);
     }
-       
-    protected function query($relData, $itemKey, $limit=null)
+
+    /**
+     * Get recomendations from ElasticSearch
+     * 
+     * @param unknown $relData
+     * @param unknown $itemKey
+     * @param string $limit
+     * @return multitype:string |\DMA\Recommendations\Classes\Backends\Illuminate\Support\Collection
+     */
+    protected function queryRecommendations($relData, $itemKey, $limit=null)
     {
         $sort   = [];
         
@@ -241,12 +250,6 @@ class ElasticSearchBackend extends BackendBase
    		$limitSetting = $itemKey . '_max_recomendations'; 
    		$limit = (is_null($limit)) ? Settings::get($limitSetting, 5): $limit;
         
-		// add weight feature to ElasticSearch sort parameter
-		$weight = $it->getActiveWeightFeature();
-		if(!is_null($weight)){
-			$sort[] = $weight;
-		}
-
         $result = [];
         if(count($fields) > 0 ){
         
@@ -280,12 +283,14 @@ class ElasticSearchBackend extends BackendBase
         
         	$params['body']['query']['filtered']['query'] = $query;
         	
-        	// Boost by feature weight
-        	$sort = array_map(function($r){
-        		return [$r => 'desc'];
-        	},array_merge($sort, ['_score']));
-        
-        	$params['body']['sort'] = $sort;
+            // Add weight feature to ElasticSearch sort parameter
+            // in order to boost by feature weight
+            $weight = $it->getActiveWeightFeature();
+            if(!is_null($weight)){
+                $sort[$weight] = 'desc';
+            }
+            //$sort['_score'] = 'desc';
+            
         	//return $params;
         
         	$result = $this->client->search($params);
@@ -376,7 +381,137 @@ class ElasticSearchBackend extends BackendBase
         return $c;
     }
     
+    /**
+     * Alternative method to get Recomendation Items.
+     * 
+     * @param array $itemKeys
+     * @param string $user
+     * @param string $limit
+     * @param boolean $SortByTopItems
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getAlternativeRecomendations(array $itemKeys, $user=null, $limit=null, $SortByTopItems=false)
+    {
+        $relData = $this->getUserRelatedItemFeatureData($user);
+                
+        // Get combine items features
+        $result = [];
+        foreach($itemKeys as $key){
+            $rel = array_get($relData, $key, []);
+            $col = $this->queryAlternative($rel, $key, $limit, $SortByTopItems);
+            $result[$key] = $col;
+        }
+  
+        return new Collection($result);
+    }
 
+    protected function queryAlternative($relData, $itemKey, $limit=null, $SortByTopItems=false)
+    {
+        $sort   = [];
+    
+        $it = $this->items[$itemKey];
+         
+        $limitSetting = $itemKey . '_max_recomendations';
+        $limit = (is_null($limit)) ? Settings::get($limitSetting, 5): $limit;
+    
+        $result = [];
+    
+        // Create query
+        $params = [];
+        $params['index'] = $this->index;
+        $params['type']  = $itemKey;
+
+        $params['body']['_source'] = false;
+
+        $params['body']['from'] = 0;
+        $params['body']['size'] = $limit;
+
+        $params['body']['fields'] = [ '_id' ];
+         
+        // Query
+        $query = [
+                'match_all' => new \stdClass()
+        ];
+
+        //$params['body']['query']['filtered'] = [];
+        
+        $params['body']['query']['filtered']['query'] = $query;
+        
+        // Get item ids to be excluded
+        $excludeIds = [];
+        foreach($relData as $doc){
+            $id = array_get($doc, '_id', null);
+            if(!is_null($id)){
+                $excludeIds[] = $id; 
+            };
+        }
+        
+        
+        // Filter out relData ( Items done by the user )
+        $filter = [
+                'bool' => [
+                    'must_not' => [
+                        'ids' => [ 'values' =>  $excludeIds ]
+                    ]
+                ]
+        ];
+        
+        $params['body']['query']['filtered']['filter'] = $filter;
+
+                    
+        if($SortByTopItems){
+            $relationFeatures   = $it->getItemRelations();
+            
+            // If user relation exists
+            if($relUserField = array_get($relationFeatures, 'user', false)){
+                // Sort for more popular item we do this by
+                // sorting by the size of the user array if it exists.
+                
+                $sort['_script'] = [
+                    'script' => "doc['$relUserField'].values.length",
+                    'type'   => 'number',
+                    'order'  => 'desc'
+                ];
+            }
+        }
+        
+        // Weight fields should be added at the end
+        // Add weight feature to ElasticSearch sort parameter
+        // in order to boost by feature weight
+        $weight = $it->getActiveWeightFeature();
+        if(!is_null($weight)){
+            $sort[$weight] = 'desc';
+        }
+        
+        $params['body']['sort'] = $sort;
+        //return $params;
+        
+        //var_dump(json_encode($params));
+        //return new Collection([]);
+
+        $result = $this->client->search($params);
+        return $this->parseResult($result);
+    }    
+    
+    
+    /**
+     * {@inheritDoc}
+     * @see \DMA\Recommendations\Classes\Backends\BackendBase::getTopItems()
+     */
+    public function getTopItems(array $itemKeys, $user=null, $limit=null){
+        return $this->getAlternativeRecomendations($itemKeys, $user, $limit, true);
+    }
+    
+    
+    /**
+     * {@inheritDoc}
+     * @see \DMA\Recommendations\Classes\Backends\BackendBase::getItemsByWeight()
+     */
+    public function getItemsByWeight(array $itemKeys, $user=null, $limit=null){
+         return $this->getAlternativeRecomendations($itemKeys, $user, $limit, false);
+    }
+    
+    
     /**
      * Get an instance of ElasticSeach client
      * 

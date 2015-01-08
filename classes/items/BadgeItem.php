@@ -55,7 +55,7 @@ class BadgeItem extends ItemBase
 	public function getFeatures()
 	{
 	    return [
-	        //'users',	        
+	        'users',	        
             'categories',
 	    ];
 	}
