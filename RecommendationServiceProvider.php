@@ -24,26 +24,13 @@ class RecommendationServiceProvider extends ServiceProvider
         {
             $recommendationManager = new RecommendationManager;
             $recommendationManager->registerItems([
-                '\DMA\Recommendations\Classes\Items\ActivityItem' => [
-                    'name' => 'Activities',
-                    'description' => 'Recommend activities base on tags and user activity.'
-                ],
-                '\DMA\Recommendations\Classes\Items\BadgeItem' => [
-                    'name' => 'Badges',
-                    'description' => 'Recommend badges base on tags and user activity.'
-                ],
-                '\DMA\Recommendations\Classes\Items\UserItem' => [
-                    'name' => 'Users',
-                    'description' => ''
-                ],                    
-
+                '\DMA\Recommendations\Classes\Items\ActivityItem',
+                '\DMA\Recommendations\Classes\Items\BadgeItem',
+                '\DMA\Recommendations\Classes\Items\UserItem',                    
             ]);
 
             $recommendationManager->registerBackends([
-        		'\DMA\Recommendations\Classes\Backends\ElasticSearchBackend' => [
-            		'name' => 'ElasticSearch engine',
-            		'description' => 'Provide recommendations using ElasticSearch as backend.'
-        		],
+        		'\DMA\Recommendations\Classes\Backends\ElasticSearchBackend',
         	]);
             
             return $recommendationManager;

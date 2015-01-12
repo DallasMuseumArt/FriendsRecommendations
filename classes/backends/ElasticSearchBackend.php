@@ -32,6 +32,18 @@ class ElasticSearchBackend extends BackendBase
     
     /**
      * {@inheritDoc}
+     * @see \DMA\Recommendations\Classes\Backends\BackendBase::getDetails()
+     */
+    public function getDetails()
+    {
+        return [
+                'name' => 'ElasticSearch engine',
+                'description' => 'Provide recommendations using ElasticSearch as backend.'
+        ];
+    }    
+    
+    /**
+     * {@inheritDoc}
      * @see \DMA\Recommendations\Classes\Backends\BackendBase::getKey()
      */
     public function getKey(){

@@ -22,19 +22,7 @@ class Settings extends Model{
      */
     public function initSettingsData()
     {
-        /*
-        // Set default values all backends
-        foreach(Recommendation::getRegisterBackends() as $engine){
-        	$fields = $engine->getPluginSettings();
-        	$this->setDefaultsFromFields($fields);
-        }
-        
-        // Set default for items
-        foreach(Recommendation::getRegisterItems() as $it){
-            $fields = $it->getPluginSettings();
-            $this->setDefaultsFromFields($fields);
-        }
-        */
+
     }        
         
     private function setDefaultsFromFields($fields)

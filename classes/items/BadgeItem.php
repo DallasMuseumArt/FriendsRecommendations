@@ -12,6 +12,19 @@ use DMA\Recommendations\Classes\Items\ItemBase;
  */
 class BadgeItem extends ItemBase
 {
+    
+    /**
+     * {@inheritDoc}
+     * @return array
+     */
+    public function getDetails()
+    {
+        return [
+                'name' => 'Badges',
+                'description' => 'Recommend badges base on tags and user activity.'
+        ];
+    }    
+    
     /**
      * {@inheritDoc}
      * @return string

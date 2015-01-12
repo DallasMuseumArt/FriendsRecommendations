@@ -90,12 +90,13 @@ class Plugin extends PluginBase
             $extra = [];
 
             // ITEM SETTINGS
-            foreach(\Recommendation::getRegisterItems() as $it){
+            foreach(\Recommendation::getRegisterItems(false) as $it){
                 if($it->adminEditable){
                     $fields = $it->getPluginSettings();
                     if(is_array($fields)){
                         foreach($fields as $key => $opts){
-                            $tab = $it->info['name'];
+                            $info = $it->getDetails();
+                            $tab = $info['name'];
                             $opts['tab'] = $tab;
                             $extra[$key] = $opts;
                         }
@@ -109,7 +110,8 @@ class Plugin extends PluginBase
             $fields = $engine->getPluginSettings();
             if(is_array($fields)){
             	foreach($fields as $key => $opts){
-            		$opts['tab'] = 'Engine';//$engine->info['name'];
+            	    //$info = $engine->getDetails();
+            		$opts['tab'] = 'Engine';//$info['name'];
             		$extra[$key] = $opts;
             	}
             } 

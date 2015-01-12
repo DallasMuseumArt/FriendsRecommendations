@@ -32,7 +32,20 @@ abstract class BackendBase
      */    
     protected $itemsByClass;
     
-    
+    /**
+     * Return details of the Item.
+     * Manly used in the Backend interface.
+     *
+     * @return array
+     *
+     * eg.
+     * [
+     *  	'name' => 'ElasticSearch',
+     *  	'description' => 'Provide recommendations using ElasticSearch as backend'
+     * ]
+     */
+    abstract public function getDetails();    
+        
     /**
      * Unique ID identifier of the Backend.
      *

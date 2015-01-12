@@ -172,8 +172,21 @@ abstract class ItemBase
        	return $data;
     }
     
-    
-    
+    /**
+     * Return details of the Item.
+     * Manly used in the Backend interface.
+     *
+     * @return array
+     *
+     * eg.
+     * [
+     *  	'name' => 'User',
+     *  	'description' => ''
+     * ]
+     */
+    abstract public function getDetails();
+
+        
     /**
      * Unique ID identifier of the Item.
      *

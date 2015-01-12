@@ -1,12 +1,5 @@
-{% for item, grp  in recommendations %}
-	<h3>{{ item }}</h3>	
-	{% if grp %}
-		<div class="row">	
-			{% for recommend in grp %}
-				{{ recommend|raw }}
-			{% endfor %}
-		</div>
-	
-	{% endif %}
-	
+<div class="row">	
+{% for recommend  in __SELF__.items %}
+	{{ recommend|raw }}
 {% endfor %}
+</div>

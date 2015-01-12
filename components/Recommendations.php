@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Collection;
 
 class Recommendations extends ComponentBase
 {
+    use \DMA\Recommendations\Traits\MultipleComponents;
+    
     const EMPTY_NOTHING = 'nothing';
     const EMPTY_WEIGHT  = 'weight';
     const EMPTY_POPULAR = 'popular';
@@ -20,46 +22,47 @@ class Recommendations extends ComponentBase
     public function componentDetails()
     {
         return [
-            'name'        => 'Recomendation',
-            'description' => 'Provide a listing of recomendations to the current user'
+            'name'        => 'Recommendation',
+            'description' => 'Provide a listing of recommendations to the current user'
         ];
     }
     
     public function defineProperties()
     {
-        # Temporal solution checkbox are not working
-        $opts = array_keys(Recommendation::getRegisterItems(true));
-        $opts = implode(', ', array_map('ucwords', $opts));
-
+        // var_dump('defineProperties');
         return [
             'recommend' => [
-                'title'       => 'Recommend',
-                'description' => 'Comma separated items to recommend. Options are: [ ' . $opts . ' ]',  
-                'type'        => 'string',
-                'default'     => $opts,
-
+                'title'             => 'Recommend',
+                'description'       => 'Show recomendations for the selected item.',  
+                'type'              => 'dropdown'
             ], 
-            'limit' => [
-                    'title'             => 'Recommend limit',
-                    'description'       => 'Number maximum recommend itmes to return. If empty or 0 global limit will be use.',
-                    'type'              => 'string',
-                    'validationPattern' => '^(\d+|)$',
-                    'validationMessage' => 'Limit should be a positive integer',
-                    'default'           => ''
-            
-            ],                
             'viewTemplate' => [
-                'title'       => 'View template',
-                'description' => 'Comma separated items to recommend. Options are: [ ' . $opts . ' ]',
-                'type'        => 'string',
-                'default'     => 'dma.friends::%sPreview',
+                'title'             => 'View template',
+                'description'       => 'Recommendation Item template. It could be any view in OctoberCMS. It could be also a string format where %s is the Recommendation Item key.',
+                'type'              => 'string',
+                'default'           => 'dma.friends::%sPreview',
             ],
+            'viewClass' => [
+                'title'             => 'View template CSS class',
+                'description'       => 'Extra CSS classes to add to the given view template.',
+                'type'              => 'string',
+                //'default'           => 'col-md-3, col-sm-4'     
+            ],        
             'ifEmpty' => [
-                'title'       => 'When empty return items',
-                'description' => 'If not recomendation are returned Recommendation Items sort by:',
-                'type'        => 'dropdown',
-                'default'     => 'weight'
+                'title'             => 'When empty return items',
+                'description'       => 'If not recomendation are returned Recommendation Items sort by one of the given options.',
+                'type'              => 'dropdown',
+                'default'           => 'weight'
                  
+            ],                
+            'limit' => [
+                'title'             => 'Recommend limit',
+                'description'       => 'Number maximum of Recommendation Items to be return. If empty or 0 global limit will be use.',
+                'type'              => 'string',
+                'validationPattern' => '^(\d+|)$',
+                'validationMessage' => 'Limit should be a positive integer',
+                'default'           => ''
+            
             ]
         ];
     }
@@ -72,76 +75,76 @@ class Recommendations extends ComponentBase
     
     protected function getRecomendations()
     {   
-        $user = $this->getUser();
-        if( $items = $this->property('recommend')){
-                        
-            // Use define limit or global limit
-            $limit = $this->property('limit');
-            if (empty($limit) || $limit <= 0){
-                $limit = null;
-            }
-                       
-            $items = explode(',', $items);
-            $items = array_map(function($e){ return strtolower(trim($e)); }, $items);
-            
-            $result = Recommendation::suggest($user, $items, $limit);
-            
-            // Fill empty result if required
-            $ifEmpty = $this->property('ifEmpty');
-            
-            if ($ifEmpty != self::EMPTY_NOTHING ){
-                
-                // Find Items with empty results
-                $emptyKeys = [];
-                foreach( $result as $key => $grp){
-                    if($grp->count() == 0){
-                        $emptyKeys[] = $key;
-                    }
-                }
-                
-                switch($ifEmpty){
-                    case self::EMPTY_WEIGHT:
-                        $fill = Recommendation::getItemsByWeight($user, $emptyKeys, $limit);
-                        $result = $result->merge($fill);
-                        break;
-    
-                    case self::EMPTY_POPULAR:
-                        $fill = Recommendation::getTopItems($user, $emptyKeys, $limit);
-                        $result = $result->merge($fill);
-                        break;
-    
-                   case self::EMPTY_CUSTOM:
-                        // TODO : needs to be implemented
-                        break;
-                        
-                    case self::EMPTY_NOTHING:
-                    default:
-                        break;
-                }
-                
-            }
-            
-            
-            return $result;
-        }
-        return [];
         
+        //var_dump('running');
+        // var_dump($this->alias);
+        
+        $user = $this->getUser();
+        $key  = $this->property('recommend');
+        
+        // var_dump($key);
+
+        // Use define limit or global limit
+        $limit = $this->property('limit');
+        if (empty($limit) || $limit <= 0){
+            $limit = null;
+        }
+        
+        $result = Recommendation::suggest($user, [$key], $limit);
+        
+        // Fill empty result if required
+        $ifEmpty = $this->property('ifEmpty');
+        
+        $recomended = array_get($result, $key, new Collection([]));
+        $isEmpty = $recomended->count() == 0; 
+        
+        if ($ifEmpty != self::EMPTY_NOTHING && $isEmpty){
+            
+            switch($ifEmpty){
+                case self::EMPTY_WEIGHT:
+                    $result = Recommendation::getItemsByWeight($user, [$key], $limit);
+                    break;
+
+                case self::EMPTY_POPULAR:
+                    $result = Recommendation::getTopItems($user, [$key], $limit);
+                    break;
+
+               case self::EMPTY_CUSTOM:
+                    // TODO : needs to be implemented
+                    break;
+                    
+                case self::EMPTY_NOTHING:
+                default:
+                    break;
+            }
+            
+        }
+        
+        return $result[$key];
+
     }
 
+    public function getItems(){
+       
+        
+        $renders = [];
+        $item           = $this->property('recommend');
+        
+        // Get and clean extra CSS classes
+        $viewCssClass   = $this->property('viewClass'); 
+                
+        foreach($this->getRecomendations() as $model){
+            $viewname = sprintf($this->property('viewTemplate'), $item);
+            $renders[]  = View::make($viewname, ['model' => $model, 'class' => $viewCssClass])->render();
+        }
+          
+        return $renders;
+    }
     
     protected function prepareVars($vars = [])
     {
        
-        $renders = [];
-        foreach($this->getRecomendations() as $item => $grp) {
-            foreach($grp as $model){
-                $viewname = sprintf($this->property('viewTemplate'), $item);
-                $renders[$item][]  = View::make($viewname, ['model' => $model, 'class' => 'col-md-3 col-sm-4'])->render();
-            }
-            $this->page['recommendations'] = $renders;
-
-        }
-        
+        // Add variables here
         
         foreach($vars as $key => $value){
             // Append or refresh extra variables
@@ -150,7 +153,8 @@ class Recommendations extends ComponentBase
 
                    
     }
-
+    
+    
     public function onRun()
     {
         // Inject CSS and JS
@@ -165,6 +169,17 @@ class Recommendations extends ComponentBase
     ###
     # OPTIONS
     ##
+
+    public function getRecommendOptions()
+    {
+        # Temporal solution checkbox are not working
+        $opts = [];
+        foreach(Recommendation::getRegisterItems() as $it){
+            $info = $it->getDetails();
+            $opts[$it->getKey()] = array_get($info, 'name', '');
+        }
+        return $opts;
+    }
     
     public function getIfEmptyOptions()
     {

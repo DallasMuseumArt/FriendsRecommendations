@@ -19,6 +19,19 @@ class UserItem extends ItemBase
      */
     public $adminEditable = false;
     
+    
+    /**
+     * {@inheritDoc}
+     * @return array
+     */
+    public function getDetails()
+    {
+        return [
+                'name' => 'Users',
+                'description' => ''
+        ];
+    }    
+    
     /**
      * {@inheritDoc}
      * @return string

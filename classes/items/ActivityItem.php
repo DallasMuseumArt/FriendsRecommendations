@@ -15,6 +15,19 @@ use Carbon\Carbon;
  */
 class ActivityItem extends ItemBase
 {
+
+    /**
+     * {@inheritDoc}
+     * @return array
+     */
+    public function getDetails()
+    {
+        return [
+                'name' => 'Activities',
+                'description' => 'Recommend activities base on tags and user activity.'
+        ];
+    }
+    
     /**
      * {@inheritDoc}
      * @return string

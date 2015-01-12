@@ -40,12 +40,11 @@ class RecommendationManager
      */
     public function registerItems(array $items)
     {
-    	foreach($items as $class => $details){
-    
+    	foreach($items as $class){
+
+    	    // Create a Item instance
     		$it = \App::make($class);
-    
-    		// Fill detail information used by the Admin interface
-    	    $it->info = $details;
+
             // Is this item active
     	    $it->active = Settings::get(strtolower($it->getKey()) .'_active', true);  
     	    // Non editable items should be active always
@@ -59,10 +58,10 @@ class RecommendationManager
     
     /**
      * Return an array of all register Recommendation Items
-     * @param boolean $excludeHidden Exclude hidden items
+     * @param boolean $excludeHidden Exclude hidden items. Default true
      * @return array
      */
-    public function getRegisterItems($excludeHidden=false)
+    public function getRegisterItems($excludeHidden=true)
     {
         if ($excludeHidden){
             return array_filter($this->items, function($it){
@@ -82,13 +81,11 @@ class RecommendationManager
      */
     public function registerBackends(array $backends)
     {
-    	foreach($backends as $class => $details){
+    	foreach($backends as $class){
     
-    		$backend = \App::make($class);
+    		// Create a Backend instance
+    	    $backend = \App::make($class);
     
-    		// Fill detail information used by the Admin interface
-    		
-    		$backend->info = $details;
     		$this->backends[$backend->getKey()] = $backend;
     		
     		// TODO : read settings to set active engine
