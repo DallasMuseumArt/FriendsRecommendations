@@ -104,6 +104,27 @@ abstract class BackendBase
      * @param October\Rain\Database\Model $model
      */
     abstract public function update($model);
+
+    /**
+     * Update data of the given Item ID in the backend.
+     *
+     * @param string Item key where the objects bellows to
+     * @param mixed|Integer $id
+     */
+    public function updateItemById($itemKey, $id)
+    {
+    
+        if(!is_null($itemKey)){
+            $key  = strtolower($itemKey);
+            if($it = array_get($this->items, $key, null)){
+                $query = $it->getQueryScope();
+                $model = $query->find($id);
+                $this->update($model);
+            }else{
+                throw new ItemNotFoundException('Item with key ' . $key . ' not found.' );
+            }
+        }
+    }    
     
     /**
      * Load all data into the backend

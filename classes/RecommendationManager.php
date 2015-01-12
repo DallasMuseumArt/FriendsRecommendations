@@ -276,4 +276,17 @@ class RecommendationManager
      {
         $this->engine->clean($itemKeys);
      }
+     
+     
+
+     /**
+      * Update data of the given Item ID in the backend.
+      *
+      * @param string Item key where the objects bellows to
+      * @param mixed|Integer $id
+      */
+     public function updateItem($itemKey, $id)
+     {
+         $this->engine->updateItemById($itemKey, $id);
+     }
 }

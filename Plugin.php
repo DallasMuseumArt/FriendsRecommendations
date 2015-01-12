@@ -125,7 +125,8 @@ class Plugin extends PluginBase
     public function register()
     {
     	// Commands for syncing wordpress data
-    	$this->registerConsoleCommand('populate-engine', 'DMA\Recommendations\Commands\PopulateEngineCommand');
-    	$this->registerConsoleCommand('clean-engine', 'DMA\Recommendations\Commands\CleanEngineCommand');
+    	$this->registerConsoleCommand('populate-engine',   'DMA\Recommendations\Commands\PopulateEngineCommand');
+    	$this->registerConsoleCommand('clean-engine',      'DMA\Recommendations\Commands\CleanEngineCommand');
+    	$this->registerConsoleCommand('update-item',       'DMA\Recommendations\Commands\UpdateItemCommand');
     }
 }
