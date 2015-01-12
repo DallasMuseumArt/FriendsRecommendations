@@ -260,7 +260,8 @@ class ElasticSearchBackend extends BackendBase
    		$fields = $it->getActiveFeatures();
    		
    		$limitSetting = $itemKey . '_max_recomendations'; 
-   		$limit = (is_null($limit)) ? Settings::get($limitSetting, 5): $limit;
+   		$limit = (is_null($limit)) ? Settings::get($limitSetting): $limit;
+        $limit = (int)$limit;
         
         $result = [];
         if(count($fields) > 0 ){
@@ -273,8 +274,11 @@ class ElasticSearchBackend extends BackendBase
         	$params['body']['_source'] = false;
         
         	$params['body']['from'] = 0;
-        	$params['body']['size'] = $limit;
-        
+        	
+        	if($limit > 0){
+        	   $params['body']['size'] = $limit;
+        	}
+        	
         	$params['body']['fields'] = [ '_id' ];
         	
             // Query
