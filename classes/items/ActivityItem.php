@@ -165,7 +165,7 @@ class ActivityItem extends ItemBase
 
 	}
 	
-	public function getTime_restrictions($model){
+	public function getTimeRestrictions($model){
 	       
 	    $restrictions = [];
 	    $keys         = ['date_begin', 'date_end', 'start_time', 'end_time', 'days'];
@@ -230,4 +230,22 @@ class ActivityItem extends ItemBase
             return Carbon::parse($time)->toTimeString();
         }
     }
+    
+    #########
+    # Filters
+    #########
+    
+    public function filterTimeRestrictions()
+    {
+        $today = new Carbon();        
+        
+        // Get day name
+        $day = $today->format('l');
+
+        // Split date and time
+        $date = $today->toDateString();
+        $time = $today->toTimeString();
+    }
+    
+    
 }

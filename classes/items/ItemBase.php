@@ -7,6 +7,7 @@ use Doctrine\DBAL\Types\ArrayType;
 
 abstract class ItemBase
 {
+    use \DMA\Recommendations\Traits\StringUtils;
     
     /**
      * This item is active
@@ -35,7 +36,7 @@ abstract class ItemBase
             'label' => 'Maximum limit of recommendations',
             'span'  => 'auto',
             'type'  => 'number', 
-            'default' => 5,
+            //'default' => 5,
             'commentAbove' => 'This value only affects this recommendations item.',
             'required' => true
         ],
@@ -125,7 +126,7 @@ abstract class ItemBase
                 $value = null;
        	        
        	        // Check if a method exists for this feature
-       	        $prepareMethod = 'get' . ucfirst($field);
+       	        $prepareMethod = 'get' . $this->underscoreToCamelCase($field, true);
        	        if (! method_exists($this, $prepareMethod) ){
                     // Using this nasty exception to determinate if 
                     // it is a relation or a simple field. I am doing this 
@@ -171,6 +172,7 @@ abstract class ItemBase
        	}
        	return $data;
     }
+
     
     /**
      * Return details of the Item.

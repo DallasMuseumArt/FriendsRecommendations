@@ -305,9 +305,13 @@ class ElasticSearchBackend extends BackendBase
             if(!is_null($weight)){
                 $sort[$weight] = 'desc';
             }
-            //$sort['_score'] = 'desc';
+            $sort['_score'] = 'desc';
+            
+            // Add sort to query
+            $params['body']['sort'] = $sort;
             
         	//return $params;
+            //var_dump(json_encode($params));
         
         	$result = $this->client->search($params);
         }
@@ -669,4 +673,3 @@ class ElasticSearchBackend extends BackendBase
     }
     
 }
-
