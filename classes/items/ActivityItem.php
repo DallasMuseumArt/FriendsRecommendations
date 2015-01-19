@@ -244,7 +244,6 @@ class ActivityItem extends ItemBase
         // Split date and time
         $date = $today->toDateString();
         $time = $today->toTimeString();
-        $time = '17:00:00';
         
         // Filters using SOLR syntax ElasticSearch DSL can
         // be used if the return value is an Array
@@ -252,18 +251,18 @@ class ActivityItem extends ItemBase
         $filter = '';
         
         // Activities without timerestrictions
-        //$filter .= "( time_restrictions.type:0 )";
+        $filter .= "( time_restrictions.type:0 )";
 
-        /*
+        
         // restriction type 1 ( Day and Time )
         $filter .= " OR ";
         $filter .= "( time_restrictions.type:1 AND 
                       time_restrictions.days.$day:true  
                       time_restrictions.start_time:[ * TO $time ] AND 
                       time_restrictions.end_time:[ $time TO * ] )";        
-        */        
+                
         // restriction type 2 ( Date and Time )
-        //$filter .= " OR ";
+        $filter .= " OR ";
         $filter .= "( time_restrictions.type:2 AND 
                       time_restrictions.date_begin:[ * TO now ] AND 
                       time_restrictions.date_end:[ now TO * ] AND 
