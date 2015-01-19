@@ -9,6 +9,7 @@ use Cms\Classes\ComponentBase;
 
 use System\Classes\ApplicationException;
 use Illuminate\Database\Eloquent\Collection;
+use DMA\Recommendations\Models\Settings;
 
 class Recommendations extends ComponentBase
 {
@@ -87,7 +88,9 @@ class Recommendations extends ComponentBase
         // Use define limit or global limit
         $limit = $this->property('limit');
         if (empty($limit) || $limit <= 0){
-            $limit = null;
+       		$limitSetting = $key . '_max_recomendations'; 
+       		$limit = Settings::get($limitSetting);
+            $limit = (int)$limit;
         }
         
         $result = Recommendation::suggest($user, [$key], $limit);
@@ -96,18 +99,19 @@ class Recommendations extends ComponentBase
         $ifEmpty = $this->property('ifEmpty');
         
         $recomended = array_get($result, $key, new Collection([]));
-        $isEmpty = $recomended->count() == 0; 
+        $size = $recomended->count();
         
-        if ($ifEmpty != self::EMPTY_NOTHING && $isEmpty){
+        if ($ifEmpty != self::EMPTY_NOTHING && $size < $limit){
+            $fill = $limit - $size;
             
             switch($ifEmpty){
                 case self::EMPTY_WEIGHT:
-                    $result = Recommendation::getItemsByWeight($user, [$key], $limit);
+                    $result = Recommendation::getItemsByWeight($user, [$key], $fill);
                     break;
 
                 case self::EMPTY_POPULAR:
-                    $result = Recommendation::getTopItems($user, [$key], $limit);
-                    break;
+                    $result = Recommendation::getTopItems($user, [$key], $fill);
+                     break;
 
                case self::EMPTY_CUSTOM:
                     // TODO : needs to be implemented
@@ -117,6 +121,11 @@ class Recommendations extends ComponentBase
                 default:
                     break;
             }
+            
+            // Fill results
+            $complete = array_get($result, $key, new Collection([]));
+            $recomended = $recomended->merge($complete);
+            $result[$key] = $recomended->unique();
             
         }
         
@@ -131,8 +140,7 @@ class Recommendations extends ComponentBase
         $item           = $this->property('recommend');
         
         // Get and clean extra CSS classes
-        $viewCssClass   = $this->property('viewClass'); 
-                
+        $viewCssClass   = $this->property('viewClass');     
         foreach($this->getRecomendations() as $model){
             $viewname = sprintf($this->property('viewTemplate'), $item);
             $renders[]  = View::make($viewname, ['model' => $model, 'class' => $viewCssClass])->render();

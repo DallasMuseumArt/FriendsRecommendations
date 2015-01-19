@@ -4,6 +4,7 @@ use Log;
 use Doctrine\DBAL\Query\QueryBuilder;
 use DMA\Recommendations\Models\Settings;
 use Doctrine\DBAL\Types\ArrayType;
+use DMA\Recommendations\Facades\Recommendation;
 
 abstract class ItemBase
 {
@@ -325,7 +326,8 @@ abstract class ItemBase
      */
     public function getActiveFeatures()
     {
-        return $this->getSettingValue('features', []);
+        $ret = $this->getSettingValue('features', []);
+        return (is_array($ret)) ?  $ret : [];
     }
     
 
@@ -342,9 +344,33 @@ abstract class ItemBase
      */
     public function getActiveFilters()
     {
-    	return $this->getSettingValue('filters', []);
+    	$ret = $this->getSettingValue('filters', []);
+    	return (is_array($ret)) ?  $ret : [];
     }
 
+    /**
+     * Get filter expressions to be use by the backend 
+     * 
+     * @param string $backendKey Backend key requesting filters
+     * @param array
+     */
+    public function getFiltersExpressions($backend)
+    {
+        $filterExpressions = [];
+        
+        $filters = $this->getActiveFilters();
+        foreach($filters as $f){
+            // Check if a method exists in this item
+            $filterMethod = 'filter' . $this->underscoreToCamelCase($f, true);
+            if (method_exists($this, $filterMethod) ){     
+                $filterExpressions[$f] = $this->{$filterMethod}($backend);
+            }       
+        }
+        
+        return $filterExpressions;
+    }
+    
+    
     /**
      * Return an array of the fields that can be use to boots
      * each Recomentation setting.
@@ -366,7 +392,11 @@ abstract class ItemBase
     
     /**
      * Return an associative array 
-     * @return multitype:
+     * @return array
+     * Return an array where key is the field name that is related to other Recommendation Item
+     * and the value is the name full namesapce of the Recommendation Item 
+     * 
+     * eg. [ 'users' => DMA\Recommendations\Classes\Items\UserItem ]
      */
     public function getItemRelations()
     {

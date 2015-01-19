@@ -19,4 +19,21 @@ trait StringUtils {
     
         return $str;
     }
+    
+    /**
+     * Normalize whitespace in a string
+     * useful when comparing strings
+     * @param string $string
+     * @return $string
+     */
+    public function normalizeWhiteSpace($string)
+    {
+        // Remove leading and ending white spaces
+        $string = trim($string);
+    
+        // Normalize white spaces
+        $string = preg_replace('/[ ]{2,}/i', ' ', $string);
+        return $string;
+    }    
+    
 }

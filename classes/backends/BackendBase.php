@@ -21,6 +21,16 @@ abstract class BackendBase
      * @var array
      */
     public $items;
+
+    /**
+     * An array to all active Items
+     * The key of this array is the Item class of the model.
+     *
+     * e.g. [ 'DMA\Recommendations\Classes\Items\ActivityItem' => $activityItemInstance ]
+     *
+     * @var array
+     */
+    protected $itemsByClass;
     
     /**
      * An array to all active Items
@@ -30,7 +40,7 @@ abstract class BackendBase
      * 
      * @var array
      */    
-    protected $itemsByClass;
+    protected $itemsByModelClass;
     
     /**
      * Return details of the Item.
@@ -212,24 +222,49 @@ abstract class BackendBase
      * @return DMA\Recomendations\Classes\Items\ItemBase 
      */
     protected function getItemByModelClass($model){
-        if(is_null($this->itemsByClass)){
-            $this->itemsByClass =[];
+        if(is_null($this->itemsByModelClass)){
+            $this->itemsByModelClass =[];
             foreach($this->items as $key => $it ){
                 $k = $it->getModel();
                 $k = (substr( $k, 0, 1 ) === "\\") ? substr($k, 1, strlen($k)) : $k;
-                $this->itemsByClass[$k] = $it;
+                $this->itemsByModelClass[$k] = $it;
             }
         }
 
         try{
             $class = get_class($model);
-            return $this->itemsByClass[$class];
+            return $this->itemsByModelClass[$class];
         }catch(\ErrorException $e){
             throw new ItemNotFoundException('Item with model class ' . $class . ' not found or Item is not active' );
         }
         
     }
+
+    /**
+     * Return Recomendation Item instance by Item class 
+     *
+     * @param DMA\Friends\Recommendations\Classes\Items\BaseItem $class
+     *
+     * @return DMA\Recomendations\Classes\Items\ItemBase
+     */
+    protected function getItemByClass($class){
+        if(is_null($this->itemsByClass)){
+            $this->itemsByClass =[];
+            foreach($this->items as $key => $it ){
+                $k = get_class($it);
+                $k = (substr( $k, 0, 1 ) === "\\") ? substr($k, 1, strlen($k)) : $k;
+                $this->itemsByClass[$k] = $it;
+            }
+        }
     
+        try{
+            $class = (substr( $class, 0, 1 ) === "\\") ? substr($class, 1, strlen($class)) : $class;
+            return $this->itemsByClass[$class];
+        }catch(\ErrorException $e){
+            throw new ItemNotFoundException('Item class ' . $class . ' not found or Item is not active' );
+        }
+    
+    }    
     
     /**
      * Bind all item models to update data on the recomendation engine.

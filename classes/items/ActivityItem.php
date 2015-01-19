@@ -15,7 +15,8 @@ use Carbon\Carbon;
  */
 class ActivityItem extends ItemBase
 {
-
+    
+   
     /**
      * {@inheritDoc}
      * @return array
@@ -66,7 +67,7 @@ class ActivityItem extends ItemBase
   	
 	/**
 	 * {@inheritDoc}
-	 * @see \DMA\Recommendations\Classes\Items\ItemBase::addFeatures()
+	 * @see \DMA\Recommendations\Classes\Items\ItemBase::getFeatures()
 	 */
 	public function getFeatures()
 	{
@@ -79,12 +80,12 @@ class ActivityItem extends ItemBase
 
 	/**
 	 * {@inheritDoc}
-	 * @see \DMA\Recommendations\Classes\Items\ItemBase::addFilters()
+	 * @see \DMA\Recommendations\Classes\Items\ItemBase::getFilters()
 	 */
 	public function getFilters()
 	{
 		return [
-		  ['time_restrictions', 'type' => 'object' ]
+		  ['time_restrictions', 'type' => 'object']
         ];
 	}	
 	
@@ -104,10 +105,10 @@ class ActivityItem extends ItemBase
 	 * @see \DMA\Recommendations\Classes\Items\ItemBase::getItemRelations()
 	 */
 	public function getItemRelations()
-	{
-		return [
-		  'user' => 'users',
-		];
+	{	    
+	    return [
+	       'users' => '\DMA\Recommendations\Classes\Items\UserItem',
+	    ];
 	}
 
 	/**
@@ -134,21 +135,19 @@ class ActivityItem extends ItemBase
 	{
 	    /*
 	    $mapping['date_detection'] = false;
-	    
+	    */
 	    // Define a dynamic template for activity times
 	    $mapping["dynamic_templates"] = [
     	    [
     	        "time_fields" => [
-    	           "match" =>  "start_time",
-    	           "match_pattern" => "regex",
+    	           "match" =>  "*time",
     	           "mapping" => [
-    	               "type"=> "date",
-    	               "format" => 'date_time_no_millis'
+    	               'type' => 'date', 'format'=>'HH:mm:ss' 
     	           ]
     	       ]
     	    ]
 	    ];	    
-	    */
+	    
 	    return $mapping;
 	}
 	
@@ -207,7 +206,7 @@ class ActivityItem extends ItemBase
         }
         // Store type
 	    $restrictions['type']       = $type;
-	    
+
 	    return $restrictions;
 	}
 	
@@ -235,16 +234,48 @@ class ActivityItem extends ItemBase
     # Filters
     #########
     
-    public function filterTimeRestrictions()
+    public function filterTimeRestrictions($backend)
     {
         $today = new Carbon();        
         
         // Get day name
-        $day = $today->format('l');
+        $day = strtolower($today->format('l'));
 
         // Split date and time
         $date = $today->toDateString();
         $time = $today->toTimeString();
+        $time = '17:00:00';
+        
+        // Filters using SOLR syntax ElasticSearch DSL can
+        // be used if the return value is an Array
+         
+        $filter = '';
+        
+        // Activities without timerestrictions
+        //$filter .= "( time_restrictions.type:0 )";
+
+        /*
+        // restriction type 1 ( Day and Time )
+        $filter .= " OR ";
+        $filter .= "( time_restrictions.type:1 AND 
+                      time_restrictions.days.$day:true  
+                      time_restrictions.start_time:[ * TO $time ] AND 
+                      time_restrictions.end_time:[ $time TO * ] )";        
+        */        
+        // restriction type 2 ( Date and Time )
+        //$filter .= " OR ";
+        $filter .= "( time_restrictions.type:2 AND 
+                      time_restrictions.date_begin:[ * TO now ] AND 
+                      time_restrictions.date_end:[ now TO * ] AND 
+                      time_restrictions.start_time:[ * TO $time ] AND 
+                      time_restrictions.end_time:[ $time TO * ] )";
+        
+        // Clean up string
+        $filter = str_replace(["\n","\r"], '', $filter);  
+        $filter = $this->normalizeWhiteSpace($filter); 
+        return $filter;
+        
+
     }
     
     

@@ -236,7 +236,7 @@ class ElasticSearchBackend extends BackendBase
             if(!is_null($rel)){
                 $col = $this->queryRecommendations($rel, $key, $limit);
             }else{
-                $col=new Collection([]);
+                $col = new Collection([]);
             }
             $result[$key] = $col;
         }
@@ -299,6 +299,12 @@ class ElasticSearchBackend extends BackendBase
         
         	$params['body']['query']['filtered']['query'] = $query;
         	
+            // Filters
+            $filters = $this->getItemFilters($it);
+            if(count($filters) > 0){
+                $params['body']['query']['filtered']['filter'] = $filters;
+            }
+        	
             // Add weight feature to ElasticSearch sort parameter
             // in order to boost by feature weight
             $weight = $it->getActiveWeightFeature();
@@ -312,7 +318,7 @@ class ElasticSearchBackend extends BackendBase
             
         	//return $params;
             //var_dump(json_encode($params));
-        
+            
         	$result = $this->client->search($params);
         }
         return $this->parseResult($result);        
@@ -337,7 +343,9 @@ class ElasticSearchBackend extends BackendBase
                 $data = @$results['hits']['hits'];
           
                 foreach($data as $row){
-                    foreach($relationFeatures as $key => $feature){
+                    foreach($relationFeatures as $feature => $class){
+                        $relIt = $this->getItemByClass($class);
+                        $key = $relIt->getKey();
         
                         $rel = @$row['_source'][$feature];
                        
@@ -476,6 +484,14 @@ class ElasticSearchBackend extends BackendBase
                 ]
         ];
         
+
+        // Item filters 
+        $itemFilters = $this->getItemFilters($it);
+        if(count($itemFilters) > 0){
+           $filter = array_merge($filter, $itemFilters);
+        }
+        
+        
         $params['body']['query']['filtered']['filter'] = $filter;
 
                     
@@ -483,7 +499,7 @@ class ElasticSearchBackend extends BackendBase
             $relationFeatures   = $it->getItemRelations();
             
             // If user relation exists
-            if($relUserField = array_get($relationFeatures, 'user', false)){
+            if($relUserField = array_search('DMA\Recommendations\Classes\Items\UserItem', $relationFeatures)){
                 // Sort for more popular item we do this by
                 // sorting by the size of the user array if it exists.
                 
@@ -494,7 +510,7 @@ class ElasticSearchBackend extends BackendBase
                 ];
             }
         }
-        
+
         // Weight fields should be added at the end
         // Add weight feature to ElasticSearch sort parameter
         // in order to boost by feature weight
@@ -634,7 +650,7 @@ class ElasticSearchBackend extends BackendBase
     	}
            
     }
-    
+        
     protected function getItemMapping($item)
     {
         $properties     = [];
@@ -670,6 +686,26 @@ class ElasticSearchBackend extends BackendBase
         }
         
         return $itemMapping;
+    }
+    
+
+    protected function getItemFilters($it)
+    {
+        $ret = [];
+        // Filters
+        $filters = $it->getFiltersExpressions($this);
+      
+        foreach($filters as $filter => $exp ){
+            // Is a filter expressed in ElasticSearch DSL
+            if(is_array($exp)){
+                $ret[] = $exp;
+            }if(is_string($exp)){
+               $strFilter['fquery']['query']['query_string']['query'] = $exp;
+               $ret[] = $strFilter;
+            }
+        }
+        
+        return $ret;
     }
     
 }

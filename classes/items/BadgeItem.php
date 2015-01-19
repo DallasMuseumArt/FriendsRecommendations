@@ -99,9 +99,9 @@ class BadgeItem extends ItemBase
 	 */
 	public function getItemRelations()
 	{
-		return [
-		  'user' => 'users',
-		];
+	    return [
+	       'users' => '\DMA\Recommendations\Classes\Items\UserItem',
+	    ];
 	}	
 
 	/**

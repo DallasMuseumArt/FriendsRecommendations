@@ -98,8 +98,8 @@ class UserItem extends ItemBase
 	public function getItemRelations()
 	{
 	    return [
-            'activity' => 'activities',
-            'badge'    => 'badges',
+            'activities' => '\DMA\Recommendations\Classes\Items\ActivityItem',
+            'badges'     => '\DMA\Recommendations\Classes\Items\BadgeItem',
 	    ];
 	}
 	
