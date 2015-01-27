@@ -79,7 +79,9 @@ class BadgeItem extends ItemBase
 	 */
 	public function getFilters()
 	{
-		return [];
+		return [
+		  ['time_restrictions', 'type' => 'object']
+        ];
 	}	
   
 	/**
@@ -129,6 +131,62 @@ class BadgeItem extends ItemBase
 			$clean[] = $r->name;
 		});
 		return $clean;
+	
+	}	
+	
+	public function getTimeRestrictions($model){
+	
+	    $restrictions = [];
+	    $keys         = ['date_begin', 'date_end'];
+	
+	    // Reset values
+	    foreach($keys as $key){
+	        $restrictions[$key] = null;
+	    }
+	
+        $restrictions['date_begin'] = $this->carbonToIso($model->date_begin);
+        $restrictions['date_end']   = $this->carbonToIso($model->date_end);
+	
+	    return $restrictions;
+	}
+	
+	protected function carbonToIso($carbonDate, $bit=null)
+	{
+	    if(!is_null($carbonDate)){
+	        if (is_null($bit)){
+	        	   return $carbonDate->toIso8601String();
+	        }else if ($bit == 'date'){
+	            return $carbonDate->toDateString();
+	        }else if ($bit == 'time'){
+	            return $carbonDate->toTimeString();
+	        }
+	    }
+	}
+	
+
+	#########
+	# Filters
+	#########
+	
+	public function filterTimeRestrictions($backend)
+	{
+	$today = new Carbon();
+	
+	// Split date and time
+	$date = $today->toDateString();
+	$time = $today->toTimeString();
+	
+	// Filters using SOLR syntax. ElasticSearch DSL can
+	// be used if the return value is an Array
+	
+    $filter = "( time_restrictions.date_begin:[ * TO now ] AND
+	time_restrictions.date_end:[ now TO * ] )";
+	
+	// Clean up string
+	$filter = str_replace(["\n","\r"], '', $filter);
+	$filter = $this->normalizeWhiteSpace($filter);
+	return $filter;
+	
 	
 	}	
 }

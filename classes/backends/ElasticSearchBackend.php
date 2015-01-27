@@ -640,7 +640,7 @@ class ElasticSearchBackend extends BackendBase
     			}
     			
     			if ($updateMapping){
-    			     Log::info('mapping updated ', $mapping);
+    			     //Log::info('mapping updated ', $mapping);
     			     $params['body'][$type] = $mapping;  			
     			     $client->indices()->putMapping($params);
     			}
