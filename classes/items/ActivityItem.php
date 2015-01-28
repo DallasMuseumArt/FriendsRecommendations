@@ -245,7 +245,7 @@ class ActivityItem extends ItemBase
         $date = $today->toDateString();
         $time = $today->toTimeString();
         
-        // Filters using SOLR syntax ElasticSearch DSL can
+        // Filters using SOLR syntax. ElasticSearch DSL can
         // be used if the return value is an Array
          
         $filter = '';
