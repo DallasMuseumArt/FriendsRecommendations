@@ -6,10 +6,12 @@ use Request;
 use Recommendation;
 use Cms\Classes\Page;
 use Cms\Classes\ComponentBase;
-
 use System\Classes\ApplicationException;
 use Illuminate\Database\Eloquent\Collection;
 use DMA\Recommendations\Models\Settings;
+use DMA\Friends\Classes\BadgeManager;
+use DMA\Friends\Models\Badge;
+use DMA\Friends\Models\Bookmark;
 
 class Recommendations extends ComponentBase
 {
@@ -200,6 +202,39 @@ class Recommendations extends ComponentBase
     	];
     }  
 
-    
+    public function onRenderBadge()
+    {
+        $id = post('id');
+        $badge = Badge::find($id);
+        return BadgeManager::render($this, $badge);
+    }
+
+    public function onBookmarkAdd()
+    {
+        $badge = $this->loadBadge();
+        $user = Auth::getUser();
+
+        Bookmark::saveBookmark($user, $badge);
+        return [
+            '.bookmark' => View::make('dma.friends::onBookmarkRemove', ['id' => $badge->id])->render(),
+        ];
+    }
+
+    public function onBookmarkRemove()
+    {
+        $badge = $this->loadBadge();
+        $user = Auth::getUser();
+
+        Bookmark::removeBookmark($user, $badge);
+        return [
+            '.bookmark' => View::make('dma.friends::onBookmarkAdd', ['id' => $badge->id])->render(),
+        ];
+    }
+
+    protected function loadBadge()
+    {
+        $id = post('id');
+        return Badge::find($id);
+    }
   
 }
