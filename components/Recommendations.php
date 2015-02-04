@@ -202,6 +202,14 @@ class Recommendations extends ComponentBase
     	];
     }  
 
+    /*
+    * TODO : The following methods onRenderBadge, onBookmarkAdd,
+    * onBookmarkRemove, loadBadge, should not be here.
+    * they provide a specific bussines logic. A solution
+    * will be create a badge component so they have they our controller 
+    * so the AJAX handlers can work. 
+    * This component should use the trait \DMA\Recommendations\Traits\MultipleComponents
+    */
     public function onRenderBadge()
     {
         $id = post('id');
