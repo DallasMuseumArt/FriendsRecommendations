@@ -16,18 +16,37 @@ use DMA\Recommendations\Classes\RecomendationManager;
 use Illuminate\Support\Collection;
 use GuzzleHttp\json_decode;
 
+/**
+ * ElasticSearch recomendation engine backend
+ *
+ * @package DMA\Recomendations\Classes\Backends
+ * @author Carlos Arroyo, Kristen Arnold
+ */
 class ElasticSearchBackend extends BackendBase
 {
-    
-    # Funtions:
-    # 1. Create mappings
-    # 3. Update mapings
-    # 2. Index items
-    
-    
+        
+    /**
+     * @var DMA\Recommendations\Classes\RecomendationManager
+     */
     private $manager;
+    
+    /**
+     * @var Elasticsearch
+     */
     private $client;    
+    
+    /**
+     * ElasticSearch index where Recomendation Items are stored.
+     * 
+     * @var string
+     */
     private $index;
+    
+    /**
+     * Array of active recomendation items
+     * 
+     * @var array
+     */
     public  $items;
     
     /**
@@ -247,10 +266,10 @@ class ElasticSearchBackend extends BackendBase
     /**
      * Get recomendations from ElasticSearch
      * 
-     * @param unknown $relData
-     * @param unknown $itemKey
-     * @param string $limit
-     * @return multitype:string |\DMA\Recommendations\Classes\Backends\Illuminate\Support\Collection
+     * @param array $relData
+     * @param string $itemKey
+     * @param integer $limit
+     * @return \Illuminate\Support\Collection
      */
     protected function queryRecommendations($relData, $itemKey, $limit=null)
     {
@@ -319,11 +338,23 @@ class ElasticSearchBackend extends BackendBase
         	//return $params;
             //var_dump(json_encode($params));
             
-        	$result = $this->client->search($params);
+            $result = [];
+            
+            if($client = $this->getClient()) {
+                $result = $client->search($params);
+            }
+                      
         }
         return $this->parseResult($result);        
     }
     
+    /**
+     * Get user data of the relationships with other 
+     * Recomendation Items.   
+     * 
+     * @param \RainLab\User\Models\User $user
+     * @return array
+     */
     public function getUserRelatedItemFeatureData($user)
     {
         $it    = $this->items['user'];
@@ -372,7 +403,7 @@ class ElasticSearchBackend extends BackendBase
     /**
      * Parser ElasticSearch result and return Model instances
      * @param array $ESResult ElasticSearch result
-     * @return Illuminate\Support\Collection
+     * @return \Illuminate\Support\Collection
      */
     protected function parseResult(array $ESResult)
     {
@@ -433,6 +464,15 @@ class ElasticSearchBackend extends BackendBase
         return new Collection($result);
     }
 
+    /**
+     * Build alternative query using the given relation data 
+     * 
+     * @param array $relData
+     * @param string $itemKey
+     * @param integer $limit
+     * @param boolean $SortByTopItems
+     * @return \Illuminate\Support\Collection
+     */
     protected function queryAlternative($relData, $itemKey, $limit=null, $SortByTopItems=false)
     {
         $sort   = [];
@@ -525,7 +565,12 @@ class ElasticSearchBackend extends BackendBase
         //var_dump(json_encode($params));
         //return new Collection([]);
 
-        $result = $this->client->search($params);
+        $result = [];
+        
+        if($client = $this->getClient()) {
+            $result = $client->search($params);
+        }
+
         return $this->parseResult($result);
     }    
     
@@ -591,10 +636,10 @@ class ElasticSearchBackend extends BackendBase
 
 
     /**
-     * Create recomendation index if does not exists.
+     * Create Recommendation index if does not exists.
      * Return true if the index is created or exists
      *
-     * @param $index 
+     * @param string $index 
      *
      * @return bool
      */
@@ -617,7 +662,9 @@ class ElasticSearchBackend extends BackendBase
     	return false;
     }
     
-    
+    /**
+     * Create or Update ElasticSearch index mapping
+     */
     protected function setupIndex()
     {
     
@@ -634,28 +681,33 @@ class ElasticSearchBackend extends BackendBase
     			// Update the index mapping if necessary
     			$current = $client->indices()->getMapping($params);
     			$updateMapping = true;
-    			//Log::info($current);
+
     			if($current = @$current[$this->index]['mappings'][$type]){
     			    $updateMapping = $current['properties'] != $mapping['properties'];
     			}
     			
     			if ($updateMapping){
-    			     //Log::info('mapping updated ', $mapping);
-    			     $params['body'][$type] = $mapping;  			
+     			     $params['body'][$type] = $mapping;  			
     			     $client->indices()->putMapping($params);
     			}
     		}
     
-    		//Log::info($ret);
+
     	}
            
     }
-        
+
+    /**
+     * Get ElasticSearch mapping of the given 
+     * Recommendation Item
+     * 
+     * @param DMA\Recommentations\Classes\Items\ItemBase $it
+     * @return array
+     */
     protected function getItemMapping($item)
     {
         $properties     = [];
         
-        // TODO : allow to specify ElasticSearch type of field
         foreach($item->getItemDataFields() as $opts){
             // Get name
             $field = array_shift($opts);
@@ -689,6 +741,13 @@ class ElasticSearchBackend extends BackendBase
     }
     
 
+    /**
+     * Get ElasticSearch filter structure for each filter on the 
+     * Recommendation itme
+     * 
+     * @param DMA\Recommentations\Classes\Items\ItemBase $it
+     * @return array
+     */
     protected function getItemFilters($it)
     {
         $ret = [];
