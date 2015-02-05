@@ -2,8 +2,7 @@
 
 use Log;
 use DMA\Recommendations\Classes\Items\ItemBase;
-
-
+use Carbon\Carbon;
 
 /**
  * Badge Item 
@@ -20,8 +19,8 @@ class BadgeItem extends ItemBase
     public function getDetails()
     {
         return [
-                'name' => 'Badges',
-                'description' => 'Recommend badges base on tags and user activity.'
+			'name' => 'Badges',
+			'description' => 'Recommend badges base on tags and user activity.'
         ];
     }    
     
