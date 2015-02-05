@@ -48,7 +48,7 @@ class BadgeItem extends ItemBase
 	 */
 	public function getQueryScope()
 	{
-		return parent::getQueryScope()->where('is_published', true);
+		return parent::getQueryScope()->isActive();
 	}	
 	
 	/**
