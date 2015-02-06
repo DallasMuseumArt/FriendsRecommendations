@@ -169,23 +169,27 @@ class BadgeItem extends ItemBase
 	
 	public function filterTimeRestrictions($backend)
 	{
-	$today = new Carbon();
 	
-	// Split date and time
-	$date = $today->toDateString();
-	$time = $today->toTimeString();
-	
-	// Filters using SOLR syntax. ElasticSearch DSL can
-	// be used if the return value is an Array
-	
-    $filter = "( time_restrictions.date_begin:[ * TO now ] AND
-	time_restrictions.date_end:[ now TO * ] )";
-	
-	// Clean up string
-	$filter = str_replace(["\n","\r"], '', $filter);
-	$filter = $this->normalizeWhiteSpace($filter);
-	return $filter;
-	
+    	// Filters using SOLR syntax. ElasticSearch DSL can
+    	// be used if the return value is an Array
+    	
+        // Include date_begin that have a value a complain with the rule
+        // and also include date_being that is null ( assuming null = don't have begin restrictions ) 
+        $filter  = "( time_restrictions.date_begin:[ * TO now ] OR
+                     _missing_:time_restrictions.date_begin )";
+    
+        $filter .= ' AND ';
+    
+        // Include date_end that have a value a complain with the rule
+        // and also include date_end that is null ( assuming null = don't have end restrictions )
+        $filter .= "( time_restrictions.date_end:[ now TO * ] OR
+                     _missing_:time_restrictions.date_end )";
+            
+    	// Clean up string
+    	$filter = str_replace(["\n","\r"], '', $filter);
+    	$filter = $this->normalizeWhiteSpace($filter);
+    	return $filter;
+    	
 	
 	}	
 }
