@@ -338,12 +338,8 @@ class ElasticSearchBackend extends BackendBase
         	//return $params;
             //var_dump(json_encode($params));
             
-            $result = [];
-            
-            if($client = $this->getClient()) {
-                $result = $client->search($params);
-            }
-                      
+            $result = $this->search($params);
+                          
         }
         return $this->parseResult($result);        
     }
@@ -370,7 +366,7 @@ class ElasticSearchBackend extends BackendBase
             $params['body']['query']['match']['_id'] = $user->getKey();
             
             if($client = $this->getClient()){
-                $results = $client->search($params);
+                $results = $this->search($params);
                 $data = @$results['hits']['hits'];
           
                 foreach($data as $row){
@@ -565,11 +561,7 @@ class ElasticSearchBackend extends BackendBase
         //var_dump(json_encode($params));
         //return new Collection([]);
 
-        $result = [];
-        
-        if($client = $this->getClient()) {
-            $result = $client->search($params);
-        }
+        $result = $this->search($params);
 
         return $this->parseResult($result);
     }    
@@ -632,6 +624,33 @@ class ElasticSearchBackend extends BackendBase
     	}
     	return $this->client;
     }   
+    
+    /**
+     * Execute a query serach in ElasticSearch
+     *
+     * @param boolean $silence
+     * Don't throw exceptions if connection or query are not successful. Default is true
+     *
+     * @return array
+     */
+    protected function search($params, $silence=true)
+    {
+       $result = [];
+        try{
+       
+            if($client = $this->getClient($silence)) {
+                $result = $client->search($params);
+            }
+            
+        }catch(\Exception $e){
+            if($silence){
+                \Log::critical('ElasticSearch :' . $e->getMessage(), $params);
+            }else{
+                throw $e;
+            }
+        }
+        return $result;
+    }
     
 
 
