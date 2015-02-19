@@ -67,8 +67,8 @@ class UserItem extends ItemBase
 	public function getFeatures()
 	{
 		return [
-		    'activities',
-		    'badges'
+		    ['activities',  'type' => 'integer'],
+		    ['badges',      'type' => 'integer']
 		];
 	}	
 
