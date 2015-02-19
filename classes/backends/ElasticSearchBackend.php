@@ -513,29 +513,32 @@ class ElasticSearchBackend extends BackendBase
         
         // Filter out relData ( Items done by the user )
         $filter = [
-                'bool' => [
+                ['bool' => [
                     'must_not' => [
                         'ids' => [ 'values' =>  $excludeIds ]
                     ]
-                ]
+                ]]
         ];
         
 
         // Item filters 
         $itemFilters = $this->getItemFilters($it);
         if(count($itemFilters) > 0){
-           $filter = array_merge($filter, $itemFilters);
+           #$filter = array_merge($filter, $itemFilters);
+           foreach($itemFilters as $f){
+               $filter[] = $f;
+           }
         }
         
         
-        $params['body']['query']['filtered']['filter'] = $filter;
+        $params['body']['query']['filtered']['filter']['and'] = $filter;
 
                     
         if($SortByTopItems){
             $relationFeatures   = $it->getItemRelations();
-            
+            \Log::info($relationFeatures);
             // If user relation exists
-            if($relUserField = array_search('DMA\Recommendations\Classes\Items\UserItem', $relationFeatures)){
+            if($relUserField = array_search('\DMA\Recommendations\Classes\Items\UserItem', $relationFeatures)){
                 // Sort for more popular item we do this by
                 // sorting by the size of the user array if it exists.
                 
