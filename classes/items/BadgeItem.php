@@ -67,7 +67,7 @@ class BadgeItem extends ItemBase
 	public function getFeatures()
 	{
 	    return [
-	        ['users',  'type' => 'integer'],        
+	        ['users',  'type' => 'string', 'index' => 'not_analyzed'],        
             'categories',
 	    ];
 	}
