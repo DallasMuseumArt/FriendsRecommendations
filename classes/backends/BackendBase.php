@@ -4,7 +4,8 @@ use Log;
 use Event;
 use DMA\Recommendations\Models\Settings;
 use DMA\Recomendations\Classes\RecomendationManager;
-use DMA\Recomendations\Classes\Exceptions\ItemNotFoundException;
+use DMA\Recommendations\Classes\Exceptions\ItemNotFoundException;
+use DMA\Recommendations\Classes\Exceptions\ItemRelationFeatureNotFoundException;
 
 /**
  * @author Carlos Arroyo
@@ -310,6 +311,38 @@ abstract class BackendBase
 
             
         }
+    }
+    
+    
+    /**
+     * Internally use for finding the name of the feature that
+     * is related and a given Item Recommendation
+     *
+     * @param string $itemKey
+     * @param string $relatedToItemKey
+     * @return string|NULL
+     */
+    protected function getItemRelationFeatureTo($itemKey, $relatedToItemKey)
+    {
+        $feature = null;
+        $it      = @$this->items[$itemKey];
+        $relItem = @$this->items[$relatedToItemKey];
+        if( !is_null($it) && !is_null($relItem) ) {
+            $relationFeatures   = $relItem->getItemRelations();
+            $itemClass          = get_class($it);
+            $itemClass = (substr( $itemClass, 0, 1 ) === "\\") ? $itemClass : "\\" . $itemClass;
+    
+            // Find relation feature
+            if($relFeature = array_search($itemClass, $relationFeatures)){
+                return $relFeature;
+            } else {
+                throw new ItemRelationFeatureNotFoundException("Not relation field found for [$itemKey] to [$relatedToItemKey]");
+            }
+        } else{
+            $message= "Not found Item Recomendations: '$itemKey' or '$relatedToItemKey' ";
+            throw new ItemNotFoundException($message);  
+        }
+        
     }
 
 }

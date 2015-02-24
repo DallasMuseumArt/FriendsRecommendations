@@ -16,6 +16,7 @@ use DMA\Recommendations\Classes\RecomendationManager;
 use Illuminate\Support\Collection;
 use GuzzleHttp\json_decode;
 
+
 /**
  * ElasticSearch recomendation engine backend
  *
@@ -48,6 +49,15 @@ class ElasticSearchBackend extends BackendBase
      * @var array
      */
     public  $items;
+    
+    
+    /**
+     * Cache user relational data 
+     * 
+     * @var array
+     */
+    private $userRelationData;
+    
     
     /**
      * {@inheritDoc}
@@ -161,8 +171,8 @@ class ElasticSearchBackend extends BackendBase
             if(!in_array($key, $itemKeys)){
                 continue; // Skip item
             }
-  
-            $query      = $it->getQueryScope();
+              
+            $query      = $it->getQuery();
             $total      = $query->count();
             $current    = 0;
             $batch      = 50;
@@ -244,164 +254,29 @@ class ElasticSearchBackend extends BackendBase
      */
     public function suggest($user, array $itemKeys, $limit=null)
     {
-        
-        $relData = $this->getUserRelatedItemFeatureData($user);
-                
-        // Get combine items features
+        // Get combine results of requested items
         $result = [];
         foreach($itemKeys as $key){
-            $rel = @$relData[$key];
-            //$rel = (is_null($rel)) ? [] : $rel; 
-            if(!is_null($rel)){
-                $col = $this->queryRecommendations($rel, $key, $limit);
-            }else{
-                $col = new Collection([]);
-            }
+            $col = $this->collaborativeFiltering($user, $key, $limit);
             $result[$key] = $col;
-        }
-  
-        return new Collection($result);
+        } 
+        return $result;
     }
 
+        
     /**
-     * Get recomendations from ElasticSearch
+     * Parser ElasticSearch result and return Model instances.
+     * Note: this method do not follow pagination only first page of results 
+     * is parse.
      * 
-     * @param array $relData
-     * @param string $itemKey
-     * @param integer $limit
-     * @return \Illuminate\Support\Collection
-     */
-    protected function queryRecommendations($relData, $itemKey, $limit=null)
-    {
-        $sort   = [];
-        
-        $it = $this->items[$itemKey];
-   		$fields = $it->getActiveFeatures();
-   		
-   		$limitSetting = $itemKey . '_max_recomendations'; 
-   		$limit = (is_null($limit)) ? Settings::get($limitSetting): $limit;
-        $limit = (int)$limit;
-        
-        $result = [];
-        if(count($fields) > 0 ){
-        
-        	// Create query
-        	$params = [];
-        	$params['index'] = $this->index;
-        	$params['type']  = $itemKey;
-        
-        	$params['body']['_source'] = false;
-        
-        	$params['body']['from'] = 0;
-        	
-        	if($limit > 0){
-        	   $params['body']['size'] = $limit;
-        	}
-        	
-        	$params['body']['fields'] = [ '_id' ];
-        	
-            // Query
-        	$query = [
-            	'more_like_this' =>
-            	[
-                	'fields' => [
-                	   $fields
-                	],
-                	
-                	'docs' => $relData,
-            	    
-            	    'min_term_freq'     => 1,
-            	    'max_query_terms'   => 12,
-            	    'min_doc_freq'      => 1
-            	]
-        	];
-        
-        	$params['body']['query']['filtered']['query'] = $query;
-        	
-            // Filters
-            $filters = $this->getItemFilters($it);
-            if(count($filters) > 0){
-                $params['body']['query']['filtered']['filter'] = $filters;
-            }
-        	
-            // Add weight feature to ElasticSearch sort parameter
-            // in order to boost by feature weight
-            $weight = $it->getActiveWeightFeature();
-            if(!is_null($weight)){
-                $sort[$weight] = 'desc';
-            }
-            $sort['_score'] = 'desc';
-            
-            // Add sort to query
-            $params['body']['sort'] = $sort;
-            
-        	//return $params;
-            //var_dump(json_encode($params));
-            
-            $result = $this->search($params);
-                          
-        }
-        return $this->parseResult($result);        
-    }
-    
-    /**
-     * Get user data of the relationships with other 
-     * Recomendation Items.   
-     * 
-     * @param \RainLab\User\Models\User $user
-     * @return array
-     */
-    public function getUserRelatedItemFeatureData($user)
-    {
-        $it    = $this->items['user'];
-        // Related users
-        $relationFeatures   = $it->getItemRelations();
-
-        $relData = [];
-        
-        if(!is_null($user)){
-            // Query
-            $params['index'] = $this->index;
-            $params['type']  = $it->getKey();
-            $params['body']['query']['match']['_id'] = $user->getKey();
-            
-            if($client = $this->getClient()){
-                $results = $this->search($params);
-                $data = @$results['hits']['hits'];
-          
-                foreach($data as $row){
-                    foreach($relationFeatures as $feature => $class){
-                        $relIt = $this->getItemByClass($class);
-                        $key = $relIt->getKey();
-        
-                        $rel = @$row['_source'][$feature];
-                       
-                        if (!is_null($rel)){
-                           if(!is_array($rel)){
-                               $rel = [ $rel ];
-                           } 
-                           
-                           foreach($rel as $pk){
-                                $relData[$key][] = [
-                                   '_type' => $key,
-                           		   '_id'   => $pk
-                                ];
-                           }
-                        }
-                    }
-                }
-            }
-        }
-        
-        return $relData;
-    }
-    
-    /**
-     * Parser ElasticSearch result and return Model instances
      * @param array $ESResult ElasticSearch result
+     * @param boolean $eloquentModels 
+     * If true return a Collection of Eloquent models  of each matched user.
+     * If false return a Collection of Ids of each matched user.     
+     * 
      * @return \Illuminate\Support\Collection
      */
-    protected function parseResult(array $ESResult)
+    protected function parseResult(array $ESResult, $eloquentModels=true)
     {
         $pkByItemType  = [];
         $data          = @$ESResult['hits']['hits'];
@@ -415,16 +290,21 @@ class ElasticSearchBackend extends BackendBase
                 $it = @$this->items[$key];
                 $col = null;
                 if (!is_null($it)){
-                    $imPks = implode(',', $pks);
-                    // Get all matching pks in this item preserving the elastic serarch
-                    // per item
-                    $col = $it->getQueryScope()
-                              ->whereIn($it->getModelKeyName(), $pks)
-                              ->orderByRaw(\DB::raw("FIELD(id, $imPks)"))
-                              ->get();
-                }
-                if(!is_null($col)){
-                    $items = array_merge($items, $col->all());
+                    if ($eloquentModels) {
+                        $imPks = implode(',', $pks);
+                        // Get all matching pks 
+                        $col = $it->getQueryScope()
+                                  ->whereIn($it->getModelKeyName(), $pks)
+                                  ->orderByRaw(\DB::raw("FIELD(id, $imPks)"))
+                                  ->get();
+                        
+                        if(!is_null($col)){
+                            $items = array_merge($items, $col->all());
+                        }
+                        
+                    } else {
+                        $items = array_merge($items, $pks);
+                    }
                 }
             }
         }else{
@@ -432,7 +312,6 @@ class ElasticSearchBackend extends BackendBase
         }
                
         $c = new Collection($items);
-
         return $c;
     }
     
@@ -447,13 +326,10 @@ class ElasticSearchBackend extends BackendBase
      */
     protected function getAlternativeRecomendations(array $itemKeys, $user=null, $limit=null, $SortByTopItems=false)
     {
-        $relData = $this->getUserRelatedItemFeatureData($user);
-                
         // Get combine items features
         $result = [];
         foreach($itemKeys as $key){
-            $rel = array_get($relData, $key, []);
-            $col = $this->queryAlternative($rel, $key, $limit, $SortByTopItems);
+            $col = $this->queryAlternative($user, $key, $limit, $SortByTopItems);
             $result[$key] = $col;
         }
   
@@ -469,106 +345,297 @@ class ElasticSearchBackend extends BackendBase
      * @param boolean $SortByTopItems
      * @return \Illuminate\Support\Collection
      */
-    protected function queryAlternative($relData, $itemKey, $limit=null, $SortByTopItems=false)
+    protected function queryAlternative($user, $itemKey, $limit=null, $SortByTopItems=false)
     {
-        $sort   = [];
-    
-        $it = $this->items[$itemKey];
-         
+        
+        $it =  array_get($this->items, $itemKey, null);
+        
+        if (is_null($it)) {
+            return new Collection([]);
+        }
+        
         $limitSetting = $itemKey . '_max_recomendations';
         $limit = (is_null($limit)) ? Settings::get($limitSetting, 5): $limit;
-    
-        $result = [];
-    
-        // Create query
+        
+        // Get related User item feature with the given Item Recommendation
+        $relField        = $this->getItemRelationFeatureTo('user', $itemKey);
+        $reverseRelField = $this->getItemRelationFeatureTo($itemKey, 'user');
+        
+        $result  = [];
+        
+        // Find recommendations base on similar users
         $params = [];
         $params['index'] = $this->index;
         $params['type']  = $itemKey;
-
+        
         $params['body']['_source'] = false;
-
+        
         $params['body']['from'] = 0;
         $params['body']['size'] = $limit;
-
-        $params['body']['fields'] = [ '_id' ];
          
-        // Query
-        $query = [
-                'match_all' => new \stdClass()
-        ];
-
-        //$params['body']['query']['filtered'] = [];
-        
-        $params['body']['query']['filtered']['query'] = $query;
-        
-        // Get item ids to be excluded
-        $excludeIds = [];
-        foreach($relData as $doc){
-            $id = array_get($doc, '_id', null);
-            if(!is_null($id)){
-                $excludeIds[] = $id; 
-            };
-        }
-        
-        
-        // Filter out relData ( Items done by the user )
-        $filter = [
-                ['bool' => [
-                    'must_not' => [
-                        'ids' => [ 'values' =>  $excludeIds ]
+         
+        // Use ElasticSearch terms lookup mechanism
+        $filters = [];
+        $filters['and'] = [                 
+                // Exclude user current Items
+                ['not' => [ 'terms' => [
+                    '_id' => [
+                        'index' => $this->index,
+                        'type'  => 'user',
+                        'id'    => $user->getKey(),
+                        'path'  => $reverseRelField
+                    ],
+                    'execution' => 'bool',
+                    '_cache'    => false
                     ]
-                ]]
+                ]],
         ];
-        
-
-        // Item filters 
-        $itemFilters = $this->getItemFilters($it);
-        if(count($itemFilters) > 0){
-           #$filter = array_merge($filter, $itemFilters);
-           foreach($itemFilters as $f){
-               $filter[] = $f;
-           }
+         
+        // Filters
+        $itemfilters = $this->getItemFilters($it);
+        foreach($itemfilters as $filter) {
+            $filters['and'][] = $filter;
         }
         
+        // Add filters to query
+        $params['body']['query']['filtered']['filter'] = $filters;
         
-        $params['body']['query']['filtered']['filter']['and'] = $filter;
-
-                    
-        if($SortByTopItems){
-            $relationFeatures   = $it->getItemRelations();
-            \Log::info($relationFeatures);
-            // If user relation exists
-            if($relUserField = array_search('\DMA\Recommendations\Classes\Items\UserItem', $relationFeatures)){
-                // Sort for more popular item we do this by
-                // sorting by the size of the user array if it exists.
-                
-                $sort['_script'] = [
-                    'script' => "doc['$relUserField'].values.size()",
+        // Sort by top users
+        $sort    = [];
+        
+        if($SortByTopItems) {
+            $sort['_script'] = [
+                    'script' => "doc['$relField'].values.size()",
                     'type'   => 'number',
                     'order'  => 'desc'
-                ];
-            }
+            ];
         }
-
-        // Weight fields should be added at the end
+        
         // Add weight feature to ElasticSearch sort parameter
         // in order to boost by feature weight
         $weight = $it->getActiveWeightFeature();
         if(!is_null($weight)){
             $sort[$weight] = 'desc';
         }
-        
+            
         $params['body']['sort'] = $sort;
-        //return $params;
         
-        //var_dump(json_encode($params));
-        //return new Collection([]);
-
         $result = $this->search($params);
-
         return $this->parseResult($result);
+        
+ 
     }    
     
+    /**
+     * Seudo collaborative filtering using current user items
+     * and top users behaviour with similar behaviour to the given 
+     * user.
+     * 
+     * @param \RainLab\User\Models\User $user
+     * @param string $itemKey
+     */
+    public function collaborativeFiltering($user, $itemKey, $limit=null) {
+        
+
+        $it = array_get($this->items, $itemKey, null);
+        
+        if (is_null($it)) {
+            return new Collection([]);
+        }
+        
+        // Get active features for make recommendations 
+        $features = $it->getActiveFeatures();
+        
+        // Phase 2 : Get items of similar users and excluded the ones
+        // The given user already have and include
+
+        $limitSetting = $itemKey . '_max_recomendations';
+        $limit = (is_null($limit)) ? Settings::get($limitSetting, 5): $limit;
+        
+        // Get related User item feature with the given Item Recommendation 
+        $relField        = $this->getItemRelationFeatureTo('user', $itemKey);
+        $reverseRelField = $this->getItemRelationFeatureTo($itemKey, 'user');
+
+        $result  = [];
+
+        // Find recommendations base on similar users
+        $params = [];
+        $params['index'] = $this->index;
+        $params['type']  = $itemKey;
+        
+        $params['body']['_source'] = false;
+        
+        $params['body']['from'] = 0;
+        $params['body']['size'] = strval($limit);
+
+        // Build query base in active features
+        $recommendationQuery = [];
+        
+        // Phase 1 : Get similar users base on the given Item Recomendation and user
+        // If user is an active feature for the given recomendation
+        if(in_array($relField, $features)) {
+            // Get similar users 
+            $similarUsers = $this->getSimilarUsersTo($user, $itemKey);
+        
+            // Filter by similar users
+            $recommendationQuery[] = [ 'terms' => [
+                $relField => $similarUsers->toArray(),
+                'execution' => 'bool',
+                '_cache'    => false
+            ]];
+            
+        }
+
+        
+        // Drop user feature if exists
+        if (($key = array_search($relField, $features)) !== false) {
+            unset($features[$key]);
+            // reset array index
+            $features = array_values($features);
+        }
+
+        if (count($features) > 0) {
+            $relData =  $this->getUserRelatedItemFeatureData($user);
+            $relData = array_get($relData, $itemKey, []);
+            
+            if( count($relData) > 0 ) {
+                // Filter by item feature similarity
+                $recommendationQuery[] = [ 'fquery' => [ 'query' => [
+                    'more_like_this' => [
+                            'fields' => $features,
+                            'docs' => $relData,
+                            'min_term_freq'     => 1,
+                            'max_query_terms'   => 12,
+                            'min_doc_freq'      => 1
+                ]]]];
+            }
+            
+        }
+        
+        $filters = ['and' => ['filters' => [], '_cache' => false ]];
+        
+        // Here is where the magic is done
+        switch (count($recommendationQuery)){
+            case 1:
+                $filters['and']['filters'][] = $recommendationQuery;
+                break;
+            
+            case 2:
+                $filters['and'][ 'filters'][] = [ 'or' => [ 'filters' => $recommendationQuery, '_cache' => false ]];
+                break; 
+        }
+                 
+        // Exclude user current Items
+        $filters['and']['filters'][] = ['not' => [ 'terms' => [
+                '_id' => [ 
+                    'index' => $this->index,
+                    'type'  => 'user',
+                    'id'    => $user->getKey(),
+                    'path'  => $reverseRelField,
+                    "cache" => false
+                ],
+                'execution' => 'bool',
+                '_cache'    => false
+                ],
+                // Not cache users current Items
+                '_cache' => false
+        ]];
+        
+       
+        // Filters
+        $itemfilters = $this->getItemFilters($it);
+        foreach($itemfilters as $filter) {
+            $filters['and']['filters'][] = $filter; 
+        }
+        
+        // Add filters to query
+        $params['body']['query']['filtered']['filter'] = $filters;
+        
+        // Sort by top users
+        $sort    = [];
+        
+        // Add weight feature to ElasticSearch sort parameter
+        // in order to boost by feature weight
+        $weight = $it->getActiveWeightFeature();
+        if(!is_null($weight)){
+            $sort[$weight] = 'desc';
+        }
+
+        $sort['_script'] = [
+                'script' => "doc['$relField'].values.size()",
+                'type'   => 'number',
+                'order'  => 'desc'
+        ];
+        
+        
+        $params['body']['sort'] = $sort;
+        
+        $result = $this->search($params);
+        return $this->parseResult($result, true);
+    }
+    
+    /**
+     * Query ElasticSearch to get top 10 similar users to a given user
+     * base on the data of the given Item Recommendation
+     * 
+     * @param \RainLab\User\Models\User $user
+     * @param string $itemKey
+     * 
+     * @return array
+     * Return array of ids of the matched users
+     */
+    private function getSimilarUsersTo($user, $itemKey) 
+    {
+
+        // Get related feature with User Item Recommendation     
+        $relField = $this->getItemRelationFeatureTo($itemKey, 'user');
+        
+        $result  = [];
+         
+        // Search similar users to given user
+        $params = [];
+        $params['index'] = $this->index;
+        $params['type']  = 'user';
+        
+        $params['body']['_source'] = false;
+        
+        $params['body']['from'] = 0;
+        $params['body']['size'] = 20; // Get only top tem users
+         
+         
+        // Use ElasticSearch terms lookup mechanism
+        $filters = [];
+        $filters['terms'] = [
+                $relField => [
+                        'index' => $this->index,
+                        'type'  => 'user',
+                        'id'    => $user->getKey(),
+                        'path'  => $relField
+                ],
+                'execution' => 'bool',
+                '_cache'    => false
+        ];
+        
+        // Add filters to query
+        $params['body']['query']['filtered']['filter'] = $filters;
+        
+        // Sort by top users
+        $sort    = [];
+        $sort['_script'] = [
+                'script' => "doc['$relField'].values.size()",
+                'type'   => 'number',
+                'order'  => 'desc'
+        ];
+        
+        
+        $params['body']['sort'] = $sort;
+        
+        $result = $this->search($params); 
+        return $this->parseResult($result, false);       
+    }
+    
+
+
     
     /**
      * {@inheritDoc}
@@ -642,6 +709,7 @@ class ElasticSearchBackend extends BackendBase
         try{
        
             if($client = $this->getClient($silence)) {
+                \Log::debug(json_encode($params));
                 $result = $client->search($params);
             }
             
@@ -697,7 +765,7 @@ class ElasticSearchBackend extends BackendBase
     			$params = [];
     			$params['index'] = $this->index;
     			$params['type']  = $type;
-    
+    			
     			$mapping = $this->getItemMapping($it);
     			    			
     			// Update the index mapping if necessary
@@ -740,8 +808,9 @@ class ElasticSearchBackend extends BackendBase
             ], $opts);
             
             // Drop analyzer if type is not string
-            if(strtolower($mapping['type']) != 'string'){
-                unset($mapping['analyzer']);
+            if( (strtolower($mapping['type']) != 'string') || 
+                (!is_null(@$mapping['index'])) ){
+                 unset($mapping['analyzer']);
             }
             
             $properties[$field] = $mapping;
@@ -751,6 +820,8 @@ class ElasticSearchBackend extends BackendBase
             '_source' => [ 'enabled' => true ],
             'properties' => $properties
         ];
+        
+
         
         // Special case get dynamic templates if getItemMapping exist in Item
         if(method_exists($item, 'getItemMapping')){
@@ -787,6 +858,66 @@ class ElasticSearchBackend extends BackendBase
         }
         
         return $ret;
+    }
+
+    /**
+     * Get user data of the relationships with other
+     * Recomendation Items.
+     *
+     * @param \RainLab\User\Models\User $user
+     * @return array
+     */
+    public function getUserRelatedItemFeatureData($user)
+    {
+        if(is_null($user)) return [];
+    
+        if(is_null($relData = $this->userRelationData)) {
+            // No cached data yet.
+    
+            $relData = [];
+    
+            $it    = $this->items['user'];
+            // Related users
+            $relationFeatures  = $it->getItemRelations();
+    
+            // Query
+            $params['index'] = $this->index;
+            $params['type']  = $it->getKey();
+            $params['body']['query']['match']['_id'] = $user->getKey();
+    
+            if($client = $this->getClient()){
+                $results = $this->search($params);
+                $data = @$results['hits']['hits'];
+    
+                foreach($data as $row){
+                    foreach($relationFeatures as $feature => $class){
+                        $relIt = $this->getItemByClass($class);
+                        $key = $relIt->getKey();
+    
+                        $rel = @$row['_source'][$feature];
+                         
+                        if (!is_null($rel)){
+                            if(!is_array($rel)){
+                                $rel = [ $rel ];
+                            }
+                             
+                            foreach($rel as $pk){
+                                $relData[$key][] = [
+                                        '_type' => $key,
+                                        '_id'   => $pk
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+    
+            // Fill cache
+            $this->userRelationData = $relData;
+    
+        }
+    
+        return $relData;
     }
     
 }

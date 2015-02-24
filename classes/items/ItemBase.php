@@ -91,10 +91,17 @@ abstract class ItemBase
      */
     public function getQueryScope()
     {
+       return $this->getQuery();
+    }
+    
+    
+    public function getQuery()
+    {
         $model = $this->getModel();
         $query = new $model;
         return $query;
     }
+    
     
     /**
      * Helper method to get the Primary key name field of this model
@@ -143,10 +150,8 @@ abstract class ItemBase
                         $key = $model->{$field}()->getRelated()->getQualifiedKeyName();
        	                $value = $model->{$field}()->select($key)
        	                                           ->distinct() 
-       	                                           ->lists($key);
-       	                //Log::info($value);
-       	               
-       	                
+       	                                           ->lists($key);      	               
+
        	                // log::debug( 'Memory usage ' . round(memory_get_usage() / 1048576, 2) . 'Mb');
        	            }catch (\BadMethodCallException $e){
        	                $value = $model->{$field};
@@ -164,12 +169,10 @@ abstract class ItemBase
                     'message' => $e->getMessage(),
                     //'stack'   => $e->getTraceAsString()
        	       ]); 
-       	    } finally {
-       	        $data[$field] = $value or '';
-       	        
-       	        //$valDebug = (is_array($value)) ? $value : [$value];
-       	        //Log::debug($feature, $valDebug);
        	    }
+       	    
+       	    $data[$field] = $value or '';          	        
+
        	}
        	return $data;
     }
