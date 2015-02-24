@@ -78,15 +78,10 @@ class Recommendations extends ComponentBase
     
     protected function getRecomendations()
     {   
-        
-        //var_dump('running');
-        // var_dump($this->alias);
-        
+               
         $user = $this->getUser();
         $key  = $this->property('recommend');
         
-        // var_dump($key);
-
         // Use define limit or global limit
         $limit = $this->property('limit');
         if (empty($limit) || $limit <= 0){
@@ -175,6 +170,7 @@ class Recommendations extends ComponentBase
     	$this->prepareVars();
     
     }    
+
    
     ###
     # OPTIONS
