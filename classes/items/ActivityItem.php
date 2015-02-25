@@ -74,7 +74,6 @@ class ActivityItem extends ItemBase
 	{
 		return [
 		    ['users',      'type' => 'string', 'index' => 'not_analyzed'],  
-	        ['is_active',  'type' => 'boolean' ],
             'categories',
 		];
 	}	
@@ -87,8 +86,9 @@ class ActivityItem extends ItemBase
 	public function getFilters()
 	{
 		return [
-		  ['time_restrictions', 'type' => 'object']
-        ];
+		  ['time_restrictions', 'type' => 'object'],
+		  ['is_active',  'type' => 'boolean' ]      
+		];
 	}	
 	
 	/**
@@ -258,7 +258,7 @@ class ActivityItem extends ItemBase
         // Filters using SOLR syntax. ElasticSearch DSL can
         // be used if the return value is an Array
          
-        $filter = '(';
+        $filter = '';
         
         // Activities without timerestrictions
         $filter .= "( time_restrictions.type:0 )";
@@ -278,23 +278,17 @@ class ActivityItem extends ItemBase
                       time_restrictions.date_end:[ now TO * ] AND 
                       time_restrictions.start_time:[ * TO $time ] AND 
                       time_restrictions.end_time:[ $time TO * ] )";
-        
-        $filter .= ')';
-        
-        // Remove in active activities
-        $filter .= ' AND ';
-        
+                
+        return $filter;
+       
+    }
+    
+    public function filterIsActive($backend)
+    {
         // Because there are activities without time restricitons but they are archived or not published
         // is better exclude them as well.
-        $filter .= '( is_active:true )';
-        
-       
-        // Clean up string
-        $filter = str_replace(["\n","\r"], '', $filter);  
-        $filter = $this->normalizeWhiteSpace($filter); 
+        $filter = '( is_active:true )';
         return $filter;
-        
-
     }
     
     

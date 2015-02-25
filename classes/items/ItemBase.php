@@ -266,12 +266,16 @@ abstract class ItemBase
         		}
         		
         		forEach($options as $k){
-        		    $k = (is_array($k)) ? array_shift($k) : $k;
-        			$opts[$k] = ucfirst($k);
-        			
-        			if($emptyValue && is_null($default)){
-        			    $default = $k;
-        			}
+           		    $k = (is_array($k)) ? array_shift($k) : $k;
+           		    
+           		    // If option starts with underscore don't include in settings
+           		    if (substr( $k, 0, 1 ) !== "_") {   
+           		        $opts[$k] = ucfirst($k);
+            			
+            			if($emptyValue && is_null($default)){
+            			    $default = $k;
+            			}
+        		    }
         		}
         		
         		if(!is_null($default)){
@@ -366,7 +370,15 @@ abstract class ItemBase
             // Check if a method exists in this item
             $filterMethod = 'filter' . $this->underscoreToCamelCase($f, true);
             if (method_exists($this, $filterMethod) ){     
-                $filterExpressions[$f] = $this->{$filterMethod}($backend);
+                $exp = $this->{$filterMethod}($backend);
+                
+                if(is_string($exp)) {
+                    // Clean up string
+                    $exp = str_replace(["\n","\r"], '', $exp);
+                    $exp = $this->normalizeWhiteSpace($exp);
+                }
+                
+                $filterExpressions[$f] = $exp;
             }       
         }
         

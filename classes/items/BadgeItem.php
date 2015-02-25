@@ -68,7 +68,6 @@ class BadgeItem extends ItemBase
 	{
 	    return [
 	        ['users',      'type' => 'string', 'index' => 'not_analyzed'],   
-	        ['is_active',  'type' => 'boolean' ],
             'categories',
 	    ];
 	}
@@ -80,7 +79,8 @@ class BadgeItem extends ItemBase
 	public function getFilters()
 	{
 		return [
-		  ['time_restrictions', 'type' => 'object']
+		  ['time_restrictions', 'type' => 'object'],
+		  ['is_active',  'type' => 'boolean' ]
         ];
 	}	
   
@@ -194,17 +194,15 @@ class BadgeItem extends ItemBase
         $filter .= "( time_restrictions.date_end:[ now TO * ] OR
                      _missing_:time_restrictions.date_end )";
 
-        $filter .= ' AND ';
-
-        // Because there are badge without time restricitons but they are archived or not published
-        // is better exclude them as well.
-        $filter .= '( is_active:true )';
-        
-    	// Clean up string
-    	$filter = str_replace(["\n","\r"], '', $filter);
-    	$filter = $this->normalizeWhiteSpace($filter);
     	return $filter;
     	
-	
-	}	
+	}
+
+	public function filterIsActive($backend)
+	{
+	    // Because there are badge without time restricitons but they are archived or not published
+	    // is better exclude them as well.
+	    $filter = '( is_active:true )';
+	    return $filter;
+	}
 }

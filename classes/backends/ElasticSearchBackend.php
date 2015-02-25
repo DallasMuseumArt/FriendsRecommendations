@@ -221,7 +221,10 @@ class ElasticSearchBackend extends BackendBase
             }
     
         }
-
+        
+        // Cleaning ElasticSearch cache
+        $client->indices()->clearCache(['index'=>$this->index]);
+        
         DB::connection()->enableQueryLog();
     }
         
@@ -662,7 +665,7 @@ class ElasticSearchBackend extends BackendBase
      * @param boolean $silence 
      * Don't throw exceptions if connection is not successful. Default is true
      * 
-     * @return mixed 
+     * @return \Elasticsearch\Client  
      * Return a \Elasticsearch\Client if connection settings are correct
      * if setting are not correct null will be returned
      */
@@ -759,33 +762,34 @@ class ElasticSearchBackend extends BackendBase
     protected function setupIndex()
     {
         if($this->createIndex($this->index)){
-    	    $client = $this->getClient();
-    		foreach($this->items as $it){
-    		    $type = strtolower($it->getKey());
-    			$params = [];
-    			$params['index'] = $this->index;
-    			$params['type']  = $type;
-    			
-    			$mapping = $this->getItemMapping($it);
-    			    			
-    			// Update the index mapping if necessary
-    			$current = $client->indices()->getMapping($params);
-    			$updateMapping = true;
-
-    			if($current = @$current[$this->index]['mappings'][$type]){
-    			    $updateMapping = $current['properties'] != $mapping['properties'];
-    			}
-
-    			try{
-        			if ($updateMapping){
-         			     $params['body'][$type] = $mapping;  			
-        			     $client->indices()->putMapping($params);
+    	    if($client = $this->getClient()) {
+        		foreach($this->items as $it){
+        		    $type = strtolower($it->getKey());
+        			$params = [];
+        			$params['index'] = $this->index;
+        			$params['type']  = $type;
+        			
+        			$mapping = $this->getItemMapping($it);
+        			    			
+        			// Update the index mapping if necessary
+        			$current = $client->indices()->getMapping($params);
+        			$updateMapping = true;
+    
+        			if($current = @$current[$this->index]['mappings'][$type]){
+        			    $updateMapping = $current['properties'] != $mapping['properties'];
         			}
-    			} catch(BadRequest400Exception $e) {
-    			    $message = "ElasticSearch type '$type' fails to update its mapping. Run the following commands to address this issue 'curl -XDELETE http://localhost:9200/friends/$type'  './artisan recommendation:populate-engine -i $type'";
-    			    \Log::critical($message);
-    			}
-    		}
+    
+        			try{
+            			if ($updateMapping){
+             			     $params['body'][$type] = $mapping;  			
+            			     $client->indices()->putMapping($params);
+            			}
+        			} catch(BadRequest400Exception $e) {
+        			    $message = "ElasticSearch type '$type' fails to update its mapping. Run the following commands to address this issue 'curl -XDELETE http://localhost:9200/friends/$type'  './artisan recommendation:populate-engine -i $type'";
+        			    \Log::critical($message);
+        			}
+        		}
+    	    }
     	}
 
            
