@@ -67,7 +67,8 @@ class BadgeItem extends ItemBase
 	public function getFeatures()
 	{
 	    return [
-	        ['users',  'type' => 'string', 'index' => 'not_analyzed'],        
+	        ['users',      'type' => 'string', 'index' => 'not_analyzed'],   
+	        ['is_active',  'type' => 'boolean' ],
             'categories',
 	    ];
 	}
@@ -122,7 +123,8 @@ class BadgeItem extends ItemBase
 		
 	
 	// PREPARE DATA METHODS
-	public function getCategories($model){
+	public function getCategories($model)
+	{
 	
 		$clean = [];
 		$model->categories->each(function($r) use (&$clean){
@@ -132,8 +134,15 @@ class BadgeItem extends ItemBase
 		return $clean;
 	
 	}	
+
+	public function getIsActive($model)
+	{
+	    return (!$model->is_archived && $model->is_published);
+	}
 	
-	public function getTimeRestrictions($model){
+	
+	public function getTimeRestrictions($model)
+	{
 	
 	    $restrictions = [];
 	    $keys         = ['date_begin', 'date_end'];
@@ -184,7 +193,13 @@ class BadgeItem extends ItemBase
         // and also include date_end that is null ( assuming null = don't have end restrictions )
         $filter .= "( time_restrictions.date_end:[ now TO * ] OR
                      _missing_:time_restrictions.date_end )";
-            
+
+        $filter .= ' AND ';
+
+        // Because there are badge without time restricitons but they are archived or not published
+        // is better exclude them as well.
+        $filter .= '( is_active:true )';
+        
     	// Clean up string
     	$filter = str_replace(["\n","\r"], '', $filter);
     	$filter = $this->normalizeWhiteSpace($filter);
