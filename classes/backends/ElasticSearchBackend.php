@@ -363,7 +363,6 @@ class ElasticSearchBackend extends BackendBase
         
         $result  = [];
         
-        // Find recommendations base on similar users
         $params = [];
         $params['index'] = $this->index;
         $params['type']  = $itemKey;
@@ -383,7 +382,8 @@ class ElasticSearchBackend extends BackendBase
                         'index' => $this->index,
                         'type'  => 'user',
                         'id'    => $user->getKey(),
-                        'path'  => $reverseRelField
+                        'path'  => $reverseRelField,
+                        'cache' => false
                     ],
                     'execution' => 'bool',
                     '_cache'    => false
@@ -481,7 +481,7 @@ class ElasticSearchBackend extends BackendBase
             $recommendationQuery[] = [ 'terms' => [
                 $relField => $similarUsers->toArray(),
                 'execution' => 'bool',
-                '_cache'    => false
+                '_cache'    => true
             ]];
             
         }
@@ -610,7 +610,8 @@ class ElasticSearchBackend extends BackendBase
                         'index' => $this->index,
                         'type'  => 'user',
                         'id'    => $user->getKey(),
-                        'path'  => $relField
+                        'path'  => $relField,
+                        "cache" => false
                 ],
                 'execution' => 'bool',
                 '_cache'    => false
@@ -757,8 +758,7 @@ class ElasticSearchBackend extends BackendBase
      */
     protected function setupIndex()
     {
-    
-    	if($this->createIndex($this->index)){
+        if($this->createIndex($this->index)){
     	    $client = $this->getClient();
     		foreach($this->items as $it){
     		    $type = strtolower($it->getKey());
@@ -775,15 +775,19 @@ class ElasticSearchBackend extends BackendBase
     			if($current = @$current[$this->index]['mappings'][$type]){
     			    $updateMapping = $current['properties'] != $mapping['properties'];
     			}
-    			
-    			if ($updateMapping){
-     			     $params['body'][$type] = $mapping;  			
-    			     $client->indices()->putMapping($params);
+
+    			try{
+        			if ($updateMapping){
+         			     $params['body'][$type] = $mapping;  			
+        			     $client->indices()->putMapping($params);
+        			}
+    			} catch(BadRequest400Exception $e) {
+    			    $message = "ElasticSearch type '$type' fails to update its mapping. Run the following commands to address this issue 'curl -XDELETE http://localhost:9200/friends/$type'  './artisan recommendation:populate-engine -i $type'";
+    			    \Log::critical($message);
     			}
     		}
-    
-
     	}
+
            
     }
 
