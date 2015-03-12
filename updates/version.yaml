@@ -1,1 +1,5 @@
-1.0.1: First version of recomendations
+1.0.1: 
+    - First version of recomendations
+1.1.0:
+    - Added Sticky Recommendation Items 
+    - Added Logic to ignore Badges and Activities with priority zero
