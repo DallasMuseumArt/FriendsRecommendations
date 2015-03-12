@@ -406,18 +406,33 @@ abstract class ItemBase
     }    
     
     /**
-     * Return an associative array 
-     * @return array
      * Return an array where key is the field name that is related to other Recommendation Item
      * and the value is the name full namesapce of the Recommendation Item 
-     * 
+     * @return array
      * eg. [ 'users' => DMA\Recommendations\Classes\Items\UserItem ]
      */
     public function getItemRelations()
     {
         return [];
     }
-
+    
+    /**
+     * Return an array where the key is the feature name
+     * and the value is are the rules use to determinate
+     * if an item should always present in the result regardless
+     * if this is part of the recomendation or not
+     * 
+     * @return array
+     * 
+     * eg. [ 'priority' => 11 ]
+     */
+    public function getStickyItemRules()
+    {
+        // TODO : implement operators 
+        // [ 'priority' => ['gte' => 10 ]]
+        return [];
+    }
+    
     /**
      * Return an array of events namespaces that will be bind
      * to keep updated this Recommendation Item in each engine backend.

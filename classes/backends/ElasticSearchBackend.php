@@ -515,12 +515,32 @@ class ElasticSearchBackend extends BackendBase
             
         }
         
+        // Sticky items
+        $stickyRules = $it->getStickyItemRules();
+        if (count($stickyRules) > 0) {
+            $pieces = [];
+            foreach( $stickyRules as $k => $v){
+                $pieces[] = $k . ':' .$v; 
+            }
+
+            $strQuery = implode(' AND ', $pieces);
+            $stickyQuery['fquery']['query']['query_string']['query'] = $strQuery;
+            $recommendationQuery[] = $stickyQuery;
+            
+            
+            // Check if is necessary a match_all query
+            if(count($recommendationQuery) == 1){
+                $matchAllQuery['fquery']['query']['match_all'] = new \stdClass();
+                $recommendationQuery[] = $matchAllQuery;
+            }
+        }
+        
         $filters = ['and' => ['filters' => [], '_cache' => false ]];
         
         // Here is where the magic is done
         switch (count($recommendationQuery)){
             case 1:
-                $filters['and']['filters'][] = $recommendationQuery;
+                $filters['and']['filters'] = $recommendationQuery;
                 break;
             
             case 2:

@@ -105,6 +105,17 @@ class BadgeItem extends ItemBase
 	       'users' => '\DMA\Recommendations\Classes\Items\UserItem',
 	    ];
 	}	
+	
+	/**
+	 * {@inheritDoc}
+	 * @see \DMA\Recommendations\Classes\Items\ItemBase::getStickyItemRules()
+	 */
+	public function getStickyItemRules()
+	{
+	    return [
+	            'priority' => 11 # Always visible 
+	    ];
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -202,7 +213,12 @@ class BadgeItem extends ItemBase
 	{
 	    // Because there are badge without time restricitons but they are archived or not published
 	    // is better exclude them as well.
-	    $filter = '( is_active:true )';
+        $filter = 'is_active:true';
+        
+        // Excluded from recomendations items with priority = 0 ( Hide )
+        $filter .= ' AND ';
+        $filter .= '-priority:0';
+        
 	    return $filter;
 	}
 }
