@@ -129,4 +129,17 @@ class Plugin extends PluginBase
     	$this->registerConsoleCommand('clean-engine',      'DMA\Recommendations\Commands\CleanEngineCommand');
     	$this->registerConsoleCommand('update-item',       'DMA\Recommendations\Commands\UpdateItemCommand');
     }
+    
+    /**
+     * Register Friends API resource endpoints
+     *
+     * @return array
+     */
+    public function registerFriendAPIResources()
+    {
+        return [
+                'recommendation'      => '\DMA\Recommendations\API\Resources\RecommendationResource',
+        ];
+    }
+    
 }
