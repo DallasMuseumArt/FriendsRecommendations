@@ -1,5 +1,18 @@
-<div class="row">	
-{% for recommend  in __SELF__.items %}
-	{{ recommend|raw }}
-{% endfor %}
+<div class="filtered-activity-list{% if class %} {{ class }}{% endif %}">
+    <ul class="activities">
+        {% for activity in activities %}
+        <li class="friends-activity preview">
+            <h4>{{ activity.title }}</h4>
+            <div class="description">
+                {{ activity.excerpt|raw }}
+            </div>
+            <div class="earned">
+                {{ model.timeAgo }}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% if links %}
+        <div class="links">{{ links|raw }}</div>
+    {% endif %}
 </div>

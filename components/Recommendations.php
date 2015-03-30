@@ -76,7 +76,7 @@ class Recommendations extends ComponentBase
         return $this->user;
     }
     
-    protected function getRecomendations()
+    protected function getRecommendations()
     {   
                
         $user = $this->getUser();
@@ -125,49 +125,26 @@ class Recommendations extends ComponentBase
             $result[$key] = $recomended->unique();
             
         }
-        
-        return $result[$key];
 
-    }
-
-    public function getItems(){
-       
-        
-        $renders = [];
-        $item           = $this->property('recommend');
-        
-        // Get and clean extra CSS classes
-        $viewCssClass   = $this->property('viewClass');     
-        foreach($this->getRecomendations() as $model){
-            $viewname = sprintf($this->property('viewTemplate'), $item);
-            $renders[]  = View::make($viewname, ['model' => $model, 'class' => $viewCssClass])->render();
+        // Currently the recommendation engine can handle a list of keys,
+        // but this function is written for a single key string. When
+        // this function can handle multiple keys, the statements below will
+        // need to change.
+        if ($key == 'activity') {
+            $this->page['activities'] =  $result[$key];
         }
-          
-        return $renders;
-    }
-    
-    protected function prepareVars($vars = [])
-    {
-       
-        // Add variables here
-        
-        foreach($vars as $key => $value){
-            // Append or refresh extra variables
-            $this->page[$key] = $value;
+        else if ($key == 'badge') {
+            $this->page['badges'] = $result[$key];
         }
-
-                   
     }
-    
-    
+
     public function onRun()
     {
         // Inject CSS and JS
         //$this->addCss('components/grouprequest/assets/css/group.request.css');
         //$this->addJs('components/grouprequest/assets/js/group.request.js');
-        
-        // Populate page user and other variables
-    	$this->prepareVars();
+
+        $this->getRecommendations();
     
     }    
 
