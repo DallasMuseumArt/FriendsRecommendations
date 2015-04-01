@@ -1,0 +1,49 @@
+<div class="badge-list">
+    {% for badge in badges %}
+        <div
+            {% if class %}
+                class="{{ class }}"
+            {% endif %}
+        >
+            <div class="friends-badge preview">
+                {% if badge.special == 'limited_edition' %}
+                    <span class="special limited-edition">Limited Edition</span>
+                {% elseif badge.special == 'featured' %}
+                    <span class="special featured">Featured</span>
+                {% endif %}
+                {% if badge.userCount > 1 %}
+                <div class="times-earned">
+                    x{{ badge.userCount }}
+                </div>
+                {% endif %}
+
+                {% if badge.image.getPath() %}
+                <a href="#" data-control="popup" data-handler="onRenderBadge" data-request-data="id: {{ badge.id }}">
+                    {% if badge.userProgress and badge.userProgress != 100 %}
+                    <div class="progress-wrap">
+                        <div class="progress">
+                            <div class="progress-indicator" style="width: {{ badge.userProgress }}%;"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <img src="{{ badge.image.getPath() }}"/>
+                </a>
+                {% endif %}
+
+                <a href="#" data-control="popup" data-handler="onRenderBadge" data-request-data="id: {{ badge.id }}">
+                    <h4>{{ badge.title }}</h4>
+
+                    <div class="earned-info">
+                        {{ badge.points }} Points / {{ badge.steps|length }} Steps
+                    </div>
+                    <div class="description">
+                        {{ badge.excerpt|raw }}
+                    </div>
+                    <div class="earned">
+                        {{ badge.timeAgo }}
+                    </div>
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+</div>

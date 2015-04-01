@@ -76,7 +76,7 @@ class Recommendations extends ComponentBase
         return $this->user;
     }
     
-    protected function getRecommendations()
+    protected function getRecommendations($filterstr = null)
     {   
                
         $user = $this->getUser();
@@ -127,7 +127,7 @@ class Recommendations extends ComponentBase
         }
 
         // Currently the recommendation engine can handle a list of keys,
-        // but this function is written for a single key string. When
+        // but this function, getRecommendations, assumes a single key. When
         // this function can handle multiple keys, the statements below will
         // need to change.
         if ($key == 'activity') {
@@ -148,6 +148,24 @@ class Recommendations extends ComponentBase
     
     }    
 
+    // We're extending this to enable compatibility with ActivityFilters component
+    public function onUpdate()
+    {
+        $filter = post('filter');
+        $this->getRecommendations($filter);
+        $this->page['filter'] = $filter;
+
+        if ($key == 'activity') {
+            $template =  '@activitylist.htm';
+        }
+        else if ($key == 'badge') {
+            $template =  '@badgelist.htm';
+        }
+
+        return [
+            '#recommendations' => $this->renderPartial($template),
+        ];
+    }
    
     ###
     # OPTIONS

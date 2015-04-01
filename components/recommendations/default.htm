@@ -1,18 +1,8 @@
-<div class="filtered-activity-list{% if class %} {{ class }}{% endif %}">
-    <ul class="activities">
-        {% for activity in activities %}
-        <li class="friends-activity preview">
-            <h4>{{ activity.title }}</h4>
-            <div class="description">
-                {{ activity.excerpt|raw }}
-            </div>
-            <div class="earned">
-                {{ model.timeAgo }}
-            </div>
-        </li>
-        {% endfor %}
-    </ul>
-    {% if links %}
-        <div class="links">{{ links|raw }}</div>
+<div id="recommendations">
+    {% if activities %}
+        {% partial '@activitylist' activities=activities links=links %}
+    {% endif %}
+    {% if badges %}
+        {% partial '@badgelist' badges=badges links=links %}
     {% endif %}
 </div>
