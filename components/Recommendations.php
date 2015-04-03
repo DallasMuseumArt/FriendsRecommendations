@@ -78,7 +78,7 @@ class Recommendations extends ComponentBase
     
     protected function getRecommendations($filterstr = null)
     {   
-               
+
         $user = $this->getUser();
         $key  = $this->property('recommend');
         
@@ -155,10 +155,12 @@ class Recommendations extends ComponentBase
         $this->getRecommendations($filter);
         $this->page['filter'] = $filter;
 
-        if ($key == 'activity') {
+        $type  = $this->property('recommend');
+
+        if ($type == 'activity') {
             $template =  '@activitylist.htm';
         }
-        else if ($key == 'badge') {
+        else if ($type == 'badge') {
             $template =  '@badgelist.htm';
         }
 
