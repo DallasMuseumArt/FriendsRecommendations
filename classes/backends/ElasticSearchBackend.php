@@ -255,12 +255,12 @@ class ElasticSearchBackend extends BackendBase
      * {@inheritDoc}
      * @see \DMA\Recommendations\Classes\Backends\BackendBase::suggest()
      */
-    public function suggest($user, array $itemKeys, $limit=null)
+    public function suggest($user, array $itemKeys, $limit=null, $filterstr=null)
     {
         // Get combine results of requested items
         $result = [];
         foreach($itemKeys as $key){
-            $col = $this->collaborativeFiltering($user, $key, $limit);
+            $col = $this->collaborativeFiltering($user, $key, $limit, $filterstr);
             $result[$key] = $col;
         } 
         return $result;
@@ -327,12 +327,12 @@ class ElasticSearchBackend extends BackendBase
      * @param boolean $SortByTopItems
      * @return \Illuminate\Support\Collection
      */
-    protected function getAlternativeRecomendations(array $itemKeys, $user=null, $limit=null, $SortByTopItems=false)
+    protected function getAlternativeRecomendations(array $itemKeys, $user=null, $limit=null, $SortByTopItems=false, $filterstr=null)
     {
         // Get combine items features
         $result = [];
         foreach($itemKeys as $key){
-            $col = $this->queryAlternative($user, $key, $limit, $SortByTopItems);
+            $col = $this->queryAlternative($user, $key, $limit, $SortByTopItems, $filterstr);
             $result[$key] = $col;
         }
   
@@ -348,7 +348,7 @@ class ElasticSearchBackend extends BackendBase
      * @param boolean $SortByTopItems
      * @return \Illuminate\Support\Collection
      */
-    protected function queryAlternative($user, $itemKey, $limit=null, $SortByTopItems=false)
+    protected function queryAlternative($user, $itemKey, $limit=null, $SortByTopItems=false, $filterstr=null)
     {
         
         $it =  array_get($this->items, $itemKey, null);
@@ -400,6 +400,17 @@ class ElasticSearchBackend extends BackendBase
             $filters['and'][] = $filter;
         }
         
+        // Process the $filterstr passed by ActivityFilters (if exists),
+        // construct query appropriately
+        $parsed_filters = json_decode($filterstr,true);
+        if ($parsed_filters && is_array($parsed_filters['categories'])) {
+            $filters['and'][] = [
+                'terms' => [
+                    'categories' => [$parsed_filters['categories']]
+                ]
+            ];
+        }
+               
         // Add filters to query
         $params['body']['query']['filtered']['filter'] = $filters;
         
@@ -437,7 +448,7 @@ class ElasticSearchBackend extends BackendBase
      * @param \RainLab\User\Models\User $user
      * @param string $itemKey
      */
-    public function collaborativeFiltering($user, $itemKey, $limit=null) {
+    public function collaborativeFiltering($user, $itemKey, $limit=null, $filterstr=null) {
         
 
         $it = array_get($this->items, $itemKey, null);
@@ -570,6 +581,17 @@ class ElasticSearchBackend extends BackendBase
         foreach($itemfilters as $filter) {
             $filters['and']['filters'][] = $filter; 
         }
+
+        // Process the $filterstr passed by ActivityFilters (if exists),
+        // construct query appropriately
+        $parsed_filters = json_decode($filterstr, true);
+        if ($filterstr && is_array($parsed_filters['categories'])) {
+            $filters['and']['filters'][] = [
+                'terms' => [
+                    'categories' => $parsed_filters['categories']
+                ]
+            ];
+        }
         
         // Add filters to query
         $params['body']['query']['filtered']['filter'] = $filters;
@@ -665,8 +687,8 @@ class ElasticSearchBackend extends BackendBase
      * {@inheritDoc}
      * @see \DMA\Recommendations\Classes\Backends\BackendBase::getTopItems()
      */
-    public function getTopItems(array $itemKeys, $user=null, $limit=null){
-        return $this->getAlternativeRecomendations($itemKeys, $user, $limit, true);
+    public function getTopItems(array $itemKeys, $user=null, $limit=null, $filterstr=null){
+        return $this->getAlternativeRecomendations($itemKeys, $user, $limit, true, $filterstr);
     }
     
     
@@ -674,8 +696,8 @@ class ElasticSearchBackend extends BackendBase
      * {@inheritDoc}
      * @see \DMA\Recommendations\Classes\Backends\BackendBase::getItemsByWeight()
      */
-    public function getItemsByWeight(array $itemKeys, $user=null, $limit=null){
-         return $this->getAlternativeRecomendations($itemKeys, $user, $limit, false);
+    public function getItemsByWeight(array $itemKeys, $user=null, $limit=null, $filterstr=null){
+         return $this->getAlternativeRecomendations($itemKeys, $user, $limit, false, $filterstr);
     }
     
     

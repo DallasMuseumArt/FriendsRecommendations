@@ -172,7 +172,7 @@ abstract class BackendBase
      * @return Illuminate\Support\Collection
      * Mixed Collection of October\Rain\Database\Model
      */
-    abstract public function suggest($user, array $itemKeys, $limit=null);
+    abstract public function suggest($user, array $itemKeys, $limit=null, $filterstr=null);
     
     /**
      * Return and array of top or most popular recommentaion items.
@@ -191,7 +191,7 @@ abstract class BackendBase
      * @return Illuminate\Support\Collection
      * Mixed Collection of October\Rain\Database\Model
      */
-    abstract public function getTopItems(array $itemKeys,  $user=null, $limit=null);
+    abstract public function getTopItems(array $itemKeys,  $user=null, $limit=null, $filterstr=null);
 
     
     /**
@@ -212,7 +212,7 @@ abstract class BackendBase
      * @return Illuminate\Support\Collection
      * Mixed Collection of October\Rain\Database\Model
      */    
-    abstract public function getItemsByWeight(array $itemKeys, $user=null, $limit=null);
+    abstract public function getItemsByWeight(array $itemKeys, $user=null, $limit=null, $filterstr=null);
     
     
     /**

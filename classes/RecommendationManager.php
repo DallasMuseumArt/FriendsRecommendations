@@ -136,12 +136,12 @@ class RecommendationManager
      * @return array
      * Mixed array of October\Rain\Database\Model
      */    
-    public function suggest($user, $itemKeys=null, $limit=null)
+    public function suggest($user, $itemKeys=null, $limit=null, $filterstr=null)
     {
         if(!is_null($this->engine)){
             
             $keys = $this->getItemKeys($itemKeys);           
-            return $this->engine->suggest($user, $keys, $limit);
+            return $this->engine->suggest($user, $keys, $limit, $filterstr);
         }
         return [];
     }
@@ -162,12 +162,12 @@ class RecommendationManager
      * @return Illuminate\Support\Collection
      * Mixed Collection of October\Rain\Database\Model
      */
-    public function getTopItems($user=null, array $itemKeys=null, $limit=null)
+    public function getTopItems($user=null, array $itemKeys=null, $limit=null, $filterstr=null)
     {
         if(!is_null($this->engine)){
     
             $keys = $this->getItemKeys($itemKeys);
-            return $this->engine->getTopItems($keys, $user, $limit);
+            return $this->engine->getTopItems($keys, $user, $limit, $filterstr);
         }
         return [];
     }
@@ -190,12 +190,12 @@ class RecommendationManager
      * @return Illuminate\Support\Collection
      * Mixed Collection of October\Rain\Database\Model
      */ 
-    public function getItemsByWeight($user=null, array $itemKeys=null, $limit=null)
+    public function getItemsByWeight($user=null, array $itemKeys=null, $limit=null, $filterstr=null)
     {
         if(!is_null($this->engine)){
     
             $keys = $this->getItemKeys($itemKeys);  
-            return $this->engine->getItemsByWeight($keys, $user, $limit);
+            return $this->engine->getItemsByWeight($keys, $user, $limit, $filterstr);
         }
         return [];
     }

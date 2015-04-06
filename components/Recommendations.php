@@ -76,7 +76,7 @@ class Recommendations extends ComponentBase
         return $this->user;
     }
     
-    protected function getRecommendations($filterstr = null)
+    protected function getRecommendations($filterstr=null)
     {   
 
         $user = $this->getUser();
@@ -90,7 +90,7 @@ class Recommendations extends ComponentBase
             $limit = (int)$limit;
         }
         
-        $result = Recommendation::suggest($user, [$key], $limit);
+        $result = Recommendation::suggest($user, [$key], $limit, $filterstr);
         
         // Fill empty result if required
         $ifEmpty = $this->property('ifEmpty');
@@ -103,11 +103,11 @@ class Recommendations extends ComponentBase
             
             switch($ifEmpty){
                 case self::EMPTY_WEIGHT:
-                    $result = Recommendation::getItemsByWeight($user, [$key], $fill);
+                    $result = Recommendation::getItemsByWeight($user, [$key], $fill, $filterstr);
                     break;
 
                 case self::EMPTY_POPULAR:
-                    $result = Recommendation::getTopItems($user, [$key], $fill);
+                    $result = Recommendation::getTopItems($user, [$key], $fill, $filterstr);
                      break;
 
                case self::EMPTY_CUSTOM:
@@ -136,6 +136,7 @@ class Recommendations extends ComponentBase
         else if ($key == 'badge') {
             $this->page['badges'] = $result[$key];
         }
+        $this->page['filters'] = $filterstr;
     }
 
     public function onRun()
@@ -151,9 +152,8 @@ class Recommendations extends ComponentBase
     // We're extending this to enable compatibility with ActivityFilters component
     public function onUpdate()
     {
-        $filter = post('filter');
-        $this->getRecommendations($filter);
-        $this->page['filter'] = $filter;
+        $filters = post('filters');
+        $this->getRecommendations($filters);
 
         $type  = $this->property('recommend');
 

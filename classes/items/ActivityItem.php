@@ -74,7 +74,7 @@ class ActivityItem extends ItemBase
 	{
 		return [
 		    ['users',      'type' => 'string', 'index' => 'not_analyzed'],  
-            'categories',
+            ['categories', 'type' => 'string', 'index' => 'not_analyzed'],
 		];
 	}	
 
