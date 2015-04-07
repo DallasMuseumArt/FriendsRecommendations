@@ -21,7 +21,13 @@ class RecommendationResource extends Controller {
                     'activity'  => '\DMA\Friends\API\Transformers\ActivityTransformer'
                 ], $item, null);
                 
-                $data = $result[$item];
+                // Check if result is empty, this could happend because the user doesn't have
+                // any activity recorded yet. If that is the case get Items by weight
+                if (count(array_get($result, $item, [])) == 0){
+                    $result = Recommendation::getItemsByWeight($user, [$item], $limit);
+                }
+                
+                $data = array_get($result, $item, []);
                 
                 if (!is_null($transformer)){
                     $data = Response::api()->withCollection($data, new $transformer);
