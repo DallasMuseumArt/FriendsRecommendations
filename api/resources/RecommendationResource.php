@@ -5,9 +5,21 @@ use Controller;
 use Recommendation;
 use RainLab\User\Models\User;
 
+use DMA\Friends\Classes\API\AdditionalRoutesTrait;
+
 class RecommendationResource extends Controller {
     
-    public function getSuggest($item, $user, $limit=null)
+    use AdditionalRoutesTrait;
+    
+    public function __construct()
+    {
+        // Add additional routes to Activity resource
+        $this->addAdditionalRoute('suggest', 'suggest/{item}/{user}',           ['GET']);
+        $this->addAdditionalRoute('suggest', 'suggest/{item}/{user}/{limit}',   ['GET']);
+    }
+    
+    
+    public function suggest($item, $user, $limit=null)
     {
         try{
             $item = strtolower($item);
