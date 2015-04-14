@@ -1,7 +1,7 @@
 <?php namespace DMA\Recommendations\API\Resources;
 
 use Response;
-use System\Classes\Controller;
+use Cms\Classes\Controller;
 use Recommendation;
 use RainLab\User\Models\User;
 
