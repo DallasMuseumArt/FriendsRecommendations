@@ -1,7 +1,7 @@
 <?php namespace DMA\Recommendations\API\Resources;
 
 use Response;
-use Controller;
+use Illuminate\Routing\Controller;
 use Recommendation;
 use RainLab\User\Models\User;
 
