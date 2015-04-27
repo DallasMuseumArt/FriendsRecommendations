@@ -1,13 +1,12 @@
 <?php namespace DMA\Recommendations\API\Resources;
 
 use Response;
-use Illuminate\Routing\Controller;
 use Recommendation;
 use RainLab\User\Models\User;
-
+use DMA\Friends\Classes\API\BaseResource;
 use DMA\Friends\Classes\API\AdditionalRoutesTrait;
 
-class RecommendationResource extends Controller {
+class RecommendationResource extends BaseResource {
     
     use AdditionalRoutesTrait;
     
