@@ -40,7 +40,7 @@ class Plugin extends PluginBase
     public function registerPermissions()
     {
     	return [
-    	'dma.recommendations.access_admin'  => ['label' => 'Manage Recommendation engine'],
+            'dma.recommendations.access_admin'  => ['label' => 'Manage Recommendation engine'],
     	];
     }
     
@@ -51,14 +51,15 @@ class Plugin extends PluginBase
     public function registerSettings()
     {
     	return [
-    	'settings' => [
-        	'label'           => 'Recommendation Engine',
-        	'description'     => 'Manage Friends recommendations settings.',
-        	'category'        => 'Friends',
-        	'icon'            => 'icon-cog',
-        	'class'           => 'DMA\Recommendations\Models\Settings',
-        	'order'           => 501,
-        	],
+            'settings' => [
+                'label'        => 'Recommendation Engine',
+                'description'  => 'Manage Friends recommendations settings.',
+                'category'     => 'Friends',
+                'icon'         => 'icon-cog',
+                'class'        => 'DMA\Recommendations\Models\Settings',
+                'order'        => 501,
+                'permissions'  => ['dma.recommendations.*'],
+            ],
     	];
     }
 
