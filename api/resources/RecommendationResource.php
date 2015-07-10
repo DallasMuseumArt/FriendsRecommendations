@@ -17,7 +17,52 @@ class RecommendationResource extends BaseResource {
         $this->addAdditionalRoute('suggest', 'suggest/{item}/{user}/{limit}',   ['GET']);
     }
     
-    
+    /**
+     * // TODO found a way to tell 
+     * 
+     * @SWG\Get(
+     *     path="recommendations/suggest/{item}/{user}",
+     *     description="Returns user recomendations",
+     *     summary="Return user recommendations by user",
+     *     tags={ "recommendations"},
+     *     
+     *     
+     *     @SWG\Parameter(
+     *         description="Items to recommend",
+     *         in="path",
+     *         name="item",
+     *         required=true,
+     *         type="string",
+     *         enum={"badge", "activity"}
+     *     ),
+     *
+     *     @SWG\Parameter(
+     *         description="ID of user to make recommendations",
+     *         format="int64",
+     *         in="path",
+     *         name="user",
+     *         required=true,
+     *         type="integer"
+     *     ),
+     *
+     *     @SWG\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @SWG\Schema(ref="#/definitions/badge"),
+     *         @SWG\Schema(ref="#/definitions/activity")
+     *     ),
+     *     @SWG\Response(
+     *         response=500,
+     *         description="Unexpected error",
+     *         @SWG\Schema(ref="#/definitions/error500")
+     *     ),
+     *     @SWG\Response(
+     *         response=404,
+     *         description="Not Found",
+     *         @SWG\Schema(ref="#/definitions/error404")
+     *     )
+     * )
+     */
     public function suggest($item, $user, $limit=null)
     {
         try{

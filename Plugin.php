@@ -139,7 +139,7 @@ class Plugin extends PluginBase
     public function registerFriendAPIResources()
     {
         return [
-                'recommendation'      => '\DMA\Recommendations\API\Resources\RecommendationResource',
+                'recommendations'      => 'DMA\Recommendations\API\Resources\RecommendationResource',
         ];
     }
     
