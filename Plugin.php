@@ -1,5 +1,7 @@
 <?php namespace DMA\Recommendations;
 
+ini_set('memory_limit', '1024M');
+
 use Event;
 use System\Classes\PluginBase;
 use DMA\Recommendations\Models\Settings;
