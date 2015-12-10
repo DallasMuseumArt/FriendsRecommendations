@@ -53,7 +53,7 @@ class Recommendations extends ComponentBase
             ],        
             'ifEmpty' => [
                 'title'             => 'When empty return items',
-                'description'       => 'If not recomendation are returned Recommendation Items sort by one of the given options.',
+                'description'       => 'If not recommendation are returned Recommendation Items sort by one of the given options.',
                 'type'              => 'dropdown',
                 'default'           => 'weight'
                  

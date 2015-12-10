@@ -1,14 +1,20 @@
 <?php namespace DMA\Recommendations\API\Resources;
 
 use Response;
+use Request;
 use Recommendation;
 use RainLab\User\Models\User;
 use DMA\Friends\Classes\API\BaseResource;
 use DMA\Friends\Classes\API\AdditionalRoutesTrait;
+use Illuminate\Database\Eloquent\Collection;
 
 class RecommendationResource extends BaseResource {
     
     use AdditionalRoutesTrait;
+    
+    const EMPTY_NOTHING = 'nothing';
+    const EMPTY_WEIGHT  = 'weight';
+    const EMPTY_POPULAR = 'popular';
     
     public function __construct()
     {
@@ -45,6 +51,15 @@ class RecommendationResource extends BaseResource {
      *         type="integer"
      *     ),
      *
+     *     @SWG\Parameter(
+     *         description="If not recommendation are returned Recommendation Items sort by one of the given options",
+     *         in="query",
+     *         name="if-empty",
+     *         required=false,
+     *         type="string",
+     *         enum={"nothing", "popular", "weight"}
+     *     ),
+     *
      *     @SWG\Response(
      *         response=200,
      *         description="Successful response",
@@ -65,7 +80,10 @@ class RecommendationResource extends BaseResource {
      */
     public function suggest($item, $user, $limit=null)
     {
+        
         try{
+            $ifEmpty = array_get(Request::all(), 'if-empty', self::EMPTY_POPULAR);
+            
             $item = strtolower($item);
             $user = User::find($user);
             $result = [];
@@ -76,14 +94,39 @@ class RecommendationResource extends BaseResource {
                     'badge'     => '\DMA\Friends\API\Transformers\BadgeTransformer',
                     'activity'  => '\DMA\Friends\API\Transformers\ActivityTransformer'
                 ], $item, null);
+
                 
-                // Check if result is empty, this could happend because the user doesn't have
-                // any activity recorded yet. If that is the case get Items by weight
-                if (count(array_get($result, $item, [])) == 0){
-                    $result = Recommendation::getItemsByWeight($user, [$item], $limit);
+                // Extend recomendations with TopItems or ItemsByWeight if required                
+                $recomended = array_get($result, $item, new Collection([]));
+                $size = $recomended->count();
+
+                if ($ifEmpty != self::EMPTY_NOTHING && $size < $limit){
+                    $fill = $limit - $size;
+                   
+                    switch($ifEmpty){
+                        case self::EMPTY_WEIGHT:
+                            $result = Recommendation::getItemsByWeight($user, [$item], $fill);
+                            break;
+                
+                        case self::EMPTY_POPULAR:
+                            $result = Recommendation::getTopItems($user, [$item], $fill);
+                            break;
+                
+                        case self::EMPTY_NOTHING:
+                        default:
+                            $result = [];
+                            break;
+                    }
+                    
+                    // Fill results
+                    $complete = array_get($result, $item, new Collection([]));
+                    $recomended = $recomended->merge($complete);
+                    $data = $recomended->unique();
+                
+                }else{
+                    $data = array_get($result, $item, []);
                 }
                 
-                $data = array_get($result, $item, []);
                 
                 if (!is_null($transformer)){
                     $data = Response::api()->withCollection($data, new $transformer);
@@ -99,5 +142,4 @@ class RecommendationResource extends BaseResource {
         
     }
 
-    
 }
