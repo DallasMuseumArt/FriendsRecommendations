@@ -6,6 +6,7 @@ use Recommendation;
 use RainLab\User\Models\User;
 use DMA\Friends\Classes\API\BaseResource;
 use DMA\Friends\Classes\API\AdditionalRoutesTrait;
+use DMA\Recommendations\Models\Settings;
 use Illuminate\Database\Eloquent\Collection;
 
 class RecommendationResource extends BaseResource {
@@ -84,6 +85,7 @@ class RecommendationResource extends BaseResource {
         try{
             $ifEmpty = array_get(Request::all(), 'if-empty', self::EMPTY_POPULAR);
             
+            $limit = (is_null($limit)) ? Settings::get($limit, 5): $limit;
             $item = strtolower($item);
             $user = User::find($user);
             $result = [];
@@ -102,7 +104,7 @@ class RecommendationResource extends BaseResource {
 
                 if ($ifEmpty != self::EMPTY_NOTHING && $size < $limit){
                     $fill = $limit - $size;
-                   
+                    
                     switch($ifEmpty){
                         case self::EMPTY_WEIGHT:
                             $result = Recommendation::getItemsByWeight($user, [$item], $fill);
