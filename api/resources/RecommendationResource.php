@@ -25,15 +25,15 @@ class RecommendationResource extends BaseResource {
     }
     
     /**
-     * // TODO found a way to tell 
-     * 
      * @SWG\Get(
      *     path="recommendations/suggest/{item}/{user}",
      *     description="Returns user recomendations",
      *     summary="Return user recommendations by user",
      *     tags={ "recommendations"},
      *     
-     *     
+     *     @SWG\Parameter(
+     *         ref="#/parameters/authorization"
+     *     ),
      *     @SWG\Parameter(
      *         description="Items to recommend",
      *         in="path",
