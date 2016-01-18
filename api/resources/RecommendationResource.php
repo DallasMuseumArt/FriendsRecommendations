@@ -97,7 +97,6 @@ class RecommendationResource extends BaseResource {
                     'activity'  => '\DMA\Friends\API\Transformers\ActivityTransformer'
                 ], $item, null);
 
-                
                 // Extend recomendations with TopItems or ItemsByWeight if required                
                 $recomended = array_get($result, $item, new Collection([]));
                 $size = $recomended->count();
@@ -129,9 +128,16 @@ class RecommendationResource extends BaseResource {
                     $data = array_get($result, $item, []);
                 }
                 
-                
+                           
                 if (!is_null($transformer)){
-                    $data = Response::api()->withCollection($data, new $transformer);
+                    # Add user to transformer if setUser method exists
+                    # Mainly used to return completed steps of Badges and Activities
+                    $transformer = new $transformer;
+                    if(method_exists($transformer, 'setUser')){
+                        $transformer->setUser($user);
+                    }
+                    
+                    $data = Response::api()->withCollection($data, $transformer);
                 }
                 
                 return $data;
