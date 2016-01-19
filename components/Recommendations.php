@@ -1,6 +1,7 @@
 <?php namespace DMA\Recommendations\Components;
 
 use Auth;
+use Log;
 use View;
 use Request;
 use Recommendation;
@@ -72,14 +73,20 @@ class Recommendations extends ComponentBase
     
     protected function getuser()
     {
-        $this->user = Auth::getUser();
-        return $this->user;
+        if(!$user = Auth::getUser()){
+            Log::debug('Auth Facade is returning a null user on the recommendation component.');
+        }
+        return $user;
     }
     
     protected function getRecomendations()
     {   
                
-        $user = $this->getUser();
+        // Get authenticated user
+        if(!$user = $this->getUser()){
+            return [];
+        }
+        
         $key  = $this->property('recommend');
         
         // Use define limit or global limit
